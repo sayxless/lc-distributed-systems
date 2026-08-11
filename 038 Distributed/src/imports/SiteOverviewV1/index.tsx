@@ -2812,27 +2812,39 @@ function GroupViewSwitcher({
 
   return (
     <div className="absolute right-0 top-[8px] z-20 h-[28px] w-[158px] rounded-[6px]" data-name=".local -button -view">
-      <div className="flex size-full items-center justify-center">
-        <div className="flex size-full items-center justify-center gap-[2px] rounded-[6px] bg-[#f5f5f5] p-[2px]">
-          <details className="relative h-full w-[62px] shrink-0" onToggle={(event) => setIsOpen(event.currentTarget.open)} open={isOpen}>
-            <summary aria-label="Group display settings" className="flex h-full w-full cursor-pointer list-none items-center justify-center gap-1 rounded-[4px] bg-white px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#0a0a0a] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9]">
+      <div className="grid size-full grid-cols-[62px_minmax(0,1fr)_minmax(0,1fr)] gap-[2px] rounded-[6px] bg-[#f5f5f5] p-[2px]">
+          <div className="relative min-w-0">
+            <button
+              aria-controls="group-display-settings"
+              aria-expanded={isOpen}
+              aria-label="Group display settings"
+              className="flex h-full w-full cursor-pointer items-center justify-center gap-1 whitespace-nowrap rounded-[4px] bg-white px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#0a0a0a] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9]"
+              onClick={() => setIsOpen((open) => !open)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") {
+                  setIsOpen(false);
+                }
+              }}
+              type="button"
+            >
               Group
               <ChevronDownIcon className="size-3 shrink-0" />
-            </summary>
-            <div aria-label="Group separator options" className="absolute right-0 top-[calc(100%+8px)] z-30 w-[196px] rounded-[8px] border border-[#e6e6e6] bg-white p-1 shadow-[0_8px_16px_rgba(16,24,40,0.12)]">
-              <button aria-pressed={separatorMode === "with"} className={optionClassName(separatorMode === "with")} onClick={() => selectSeparatorMode("with")} type="button">
-                With separators
-                {separatorMode === "with" ? <CheckIcon /> : null}
-              </button>
-              <button aria-pressed={separatorMode === "without"} className={optionClassName(separatorMode === "without")} onClick={() => selectSeparatorMode("without")} type="button">
-                Without separators
-                {separatorMode === "without" ? <CheckIcon /> : null}
-              </button>
-            </div>
-          </details>
-          <button aria-pressed="false" className="relative h-full w-[41px] shrink-0 cursor-pointer rounded-[4px] px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#757575]" data-prototype-view="table" type="button">Table</button>
-          <button aria-pressed="false" className="relative h-full w-[42px] shrink-0 cursor-pointer rounded-[4px] px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#757575]" data-prototype-view="cards" type="button">Cards</button>
-        </div>
+            </button>
+            {isOpen ? (
+              <div id="group-display-settings" aria-label="Group separator options" className="absolute right-0 top-[calc(100%+8px)] z-30 w-[196px] rounded-[8px] border border-[#e6e6e6] bg-white p-1 shadow-[0_8px_16px_rgba(16,24,40,0.12)]">
+                <button aria-pressed={separatorMode === "with"} className={optionClassName(separatorMode === "with")} onClick={() => selectSeparatorMode("with")} type="button">
+                  With separators
+                  {separatorMode === "with" ? <CheckIcon /> : null}
+                </button>
+                <button aria-pressed={separatorMode === "without"} className={optionClassName(separatorMode === "without")} onClick={() => selectSeparatorMode("without")} type="button">
+                  Without separators
+                  {separatorMode === "without" ? <CheckIcon /> : null}
+                </button>
+              </div>
+            ) : null}
+          </div>
+          <button aria-pressed="false" className="relative h-full min-w-0 cursor-pointer rounded-[4px] px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#757575]" data-prototype-view="table" type="button">Table</button>
+          <button aria-pressed="false" className="relative h-full min-w-0 cursor-pointer rounded-[4px] px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#757575]" data-prototype-view="cards" type="button">Cards</button>
       </div>
     </div>
   );

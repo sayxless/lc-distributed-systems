@@ -235,7 +235,7 @@ function StatusBadge({ status, charge }: Pick<EquipmentItem, "status" | "charge"
   }[status]
 
   return (
-    <span className="inline-flex h-8 items-center gap-2 rounded-[6px] border border-[#e6e6e6] bg-white px-2.5 font-['Inter:Regular',sans-serif] text-[14px] leading-5 text-[#0a0a0a]">
+    <span className="inline-flex h-7 w-fit shrink-0 justify-self-start items-center gap-1.5 rounded-[6px] border border-[#e6e6e6] bg-white px-2 font-['Inter:Regular',sans-serif] text-[14px] leading-5 text-[#0a0a0a]">
       {status === "charging" ? <CircleProgressIcon /> : status === "available" ? <AvailableIcon /> : <span aria-hidden="true" className="size-2.5 rounded-full bg-[#1dcc6e]" />}
       {label}
     </span>
