@@ -2537,13 +2537,6 @@ function Container2({ equipmentTabEnabled = false, activeSiteTab = "overview" }:
                 </div>
               </div>
             </div>
-            <div className="cursor-pointer relative rounded-[6px] shrink-0" data-name="tab">
-              <div className="flex flex-row items-center justify-center size-full">
-                <div className="content-stretch flex gap-[8px] items-center justify-center py-[12px] relative size-full">
-                  <p className="[word-break:break-word] font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[#525252] text-[14px] tracking-[-0.084px] whitespace-nowrap">Settings</p>
-                </div>
-              </div>
-            </div>
             {equipmentTabEnabled && (
               <div className="cursor-pointer relative rounded-[6px] shrink-0" data-name="tab" data-prototype-site-tab="equipment">
                 <div className="flex flex-row items-center justify-center size-full">
@@ -2554,6 +2547,13 @@ function Container2({ equipmentTabEnabled = false, activeSiteTab = "overview" }:
                 </div>
               </div>
             )}
+            <div className="cursor-pointer relative rounded-[6px] shrink-0" data-name="tab">
+              <div className="flex flex-row items-center justify-center size-full">
+                <div className="content-stretch flex gap-[8px] items-center justify-center py-[12px] relative size-full">
+                  <p className="[word-break:break-word] font-['Inter:Medium',sans-serif] font-medium leading-[20px] not-italic relative shrink-0 text-[#525252] text-[14px] tracking-[-0.084px] whitespace-nowrap">Settings</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

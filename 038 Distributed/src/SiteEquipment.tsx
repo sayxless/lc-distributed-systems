@@ -827,6 +827,13 @@ type SectionedEquipmentGroup = {
   items: SectionedEquipmentItem[]
 }
 
+const sectionedGroupOrder: Record<SectionedEquipmentGroup["kind"], number> = {
+  chargers: 0,
+  gensets: 1,
+  bess: 2,
+  paralleling: 3,
+}
+
 type SectionedEquipmentEntity = {
   id: string
   kind: Extract<EquipmentKind, "distributed" | "units">
@@ -1094,7 +1101,9 @@ function SectionedEntityRow({
       {expanded && entity.groups.length > 0 && (
         <div id={contentId} className="border-t border-[#e6e6e6] bg-white p-4">
           <div className="space-y-3">
-            {entity.groups.map((group) => <SectionedEquipmentGroup key={group.kind} group={group} />)}
+            {[...entity.groups]
+              .sort((left, right) => sectionedGroupOrder[left.kind] - sectionedGroupOrder[right.kind])
+              .map((group) => <SectionedEquipmentGroup key={group.kind} group={group} />)}
           </div>
         </div>
       )}
@@ -1145,32 +1154,8 @@ function EquipmentSectionsNavigation({
   )
 }
 
-function EquipmentContent({
-  version,
-  onVersionChange,
-}: {
-  version: SiteEquipmentVersion
-  onVersionChange: (version: SiteEquipmentVersion) => void
-}) {
-  const [active, setActive] = useState<"all" | EquipmentKind>("all")
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(
-    () => new Set(["DS-100", "Booster B, UN-400"]),
-  )
-  const visibleEntities = active === "all"
-    ? sectionedEntities
-    : active === "distributed" || active === "units"
-      ? sectionedEntities.filter((entity) => entity.kind === active)
-      : []
-  const visibleItems = active === "all" || active === "distributed" || active === "units"
-    ? []
-    : Array.from(
-      new Map(
-        sectionedEntities.flatMap((entity) => entity.groups)
-          .filter((group) => group.kind === active)
-          .flatMap((group) => group.items)
-          .map((item) => [item.id, item]),
-      ).values(),
-    )
+function EquipmentContent() {
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
 
   function toggleEntity(id: string) {
     setExpandedIds((previous) => {
@@ -1182,11 +1167,9 @@ function EquipmentContent({
   }
 
   return (
-    <div className="flex w-full items-start gap-12 pb-24" data-name="site equipment content">
-      <EquipmentSectionsNavigation active={active} onChange={setActive} />
-
-      <main id="site-equipment-content" className="min-w-0 flex-1">
-        <header className="mb-7 flex items-start justify-between gap-4">
+    <div className="w-full pb-24" data-name="site equipment content">
+      <main id="site-equipment-content" className="mx-auto w-full max-w-[1080px]">
+        <header className="mb-7">
           <div>
             <h1 className="font-['Inter:Medium',sans-serif] text-[18px] font-medium leading-7 tracking-[-0.252px] text-[#0a0a0a]">
               Site equipment
@@ -1195,22 +1178,17 @@ function EquipmentContent({
               Manage unit availability over time.
             </p>
           </div>
-          <EquipmentVersionSwitcher version={version} onVersionChange={onVersionChange} />
         </header>
-        {visibleEntities.length > 0 ? (
-          <div className="overflow-hidden rounded-[12px] border border-[#e6e6e6] bg-white divide-y divide-[#e6e6e6]">
-            {visibleEntities.map((entity) => (
-              <SectionedEntityRow
-                key={entity.id}
-                entity={entity}
-                expanded={expandedIds.has(entity.id)}
-                onToggle={() => toggleEntity(entity.id)}
-              />
-            ))}
-          </div>
-        ) : (
-          <SectionedItemList items={visibleItems} />
-        )}
+        <div className="overflow-hidden rounded-[12px] border border-[#e6e6e6] bg-white divide-y divide-[#e6e6e6]">
+          {sectionedEntities.map((entity) => (
+            <SectionedEntityRow
+              key={entity.id}
+              entity={entity}
+              expanded={expandedIds.has(entity.id)}
+              onToggle={() => toggleEntity(entity.id)}
+            />
+          ))}
+        </div>
       </main>
     </div>
   )
@@ -1219,7 +1197,6 @@ function EquipmentContent({
 export default function SiteEquipment({ equipmentTabEnabled = false }: { equipmentTabEnabled?: boolean }) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [portalHost, setPortalHost] = useState<HTMLElement | null>(null)
-  const [version, setVersion] = useState<SiteEquipmentVersion>("table")
 
   useLayoutEffect(() => {
     const originalContent = rootRef.current?.querySelector<HTMLElement>(
@@ -1238,12 +1215,7 @@ export default function SiteEquipment({ equipmentTabEnabled = false }: { equipme
   return (
     <div ref={rootRef} className="contents">
       <SiteOverviewV2 equipmentTabEnabled={equipmentTabEnabled} activeSiteTab="equipment" />
-      {portalHost && createPortal(
-        version === "sections"
-          ? <EquipmentContent version={version} onVersionChange={setVersion} />
-          : <SiteEquipmentTableContent version={version} onVersionChange={setVersion} />,
-        portalHost,
-      )}
+      {portalHost && createPortal(<EquipmentContent />, portalHost)}
     </div>
   )
 }

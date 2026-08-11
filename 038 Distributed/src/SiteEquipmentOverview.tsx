@@ -24,6 +24,13 @@ type EquipmentTypeGroup = {
   items: EquipmentItem[]
 }
 
+const equipmentGroupOrder: Record<EquipmentTypeGroup["kind"], number> = {
+  chargers: 0,
+  gensets: 1,
+  bess: 2,
+  paralleling: 3,
+}
+
 type EquipmentEntity = {
   id: string
   kind: Extract<EquipmentKind, "distributed" | "units">
@@ -258,15 +265,19 @@ function Incidents({
   incidents,
   className = "",
   emptyClassName = "text-[#0a0a0a]",
+  align = "end",
 }: {
   incidents?: Incident[]
   className?: string
   emptyClassName?: string
+  align?: "start" | "end"
 }) {
-  if (!incidents?.length) return <span className={`whitespace-nowrap ${emptyClassName} ${className}`}>No incidents</span>
+  const alignment = align === "end" ? "justify-end" : "justify-start"
+
+  if (!incidents?.length) return <span className={`flex w-full items-center ${alignment} whitespace-nowrap ${emptyClassName} ${className}`}>No incidents</span>
 
   return (
-    <span aria-label={`${incidents.reduce((total, incident) => total + incident.count, 0)} open incidents`} className={`flex items-center justify-end gap-3 ${className}`}>
+    <span aria-label={`${incidents.reduce((total, incident) => total + incident.count, 0)} open incidents`} className={`flex w-full items-center ${alignment} gap-3 ${className}`}>
       {incidents.map((incident) => (
         <span key={incident.severity} className="inline-flex items-center gap-1 font-['Inter:Regular',sans-serif] text-[14px] leading-5 text-[#0a0a0a]">
           <IncidentIcon severity={incident.severity} />
@@ -357,7 +368,9 @@ function EquipmentEntityRow({ entity, expanded, onToggle }: { entity: EquipmentE
       {expanded && (
         <div id={contentId} className="border-t border-[#e6e6e6] bg-[#fafafa] p-5">
           <div className="space-y-3">
-            {entity.groups.map((group) => <EquipmentTypeSection key={group.kind} group={group} parentId={entity.id} />)}
+            {[...entity.groups]
+              .sort((left, right) => equipmentGroupOrder[left.kind] - equipmentGroupOrder[right.kind])
+              .map((group) => <EquipmentTypeSection key={group.kind} group={group} parentId={entity.id} />)}
           </div>
         </div>
       )}
@@ -401,104 +414,8 @@ function EquipmentEntityGroup({
   )
 }
 
-type EquipmentCardItem = EquipmentItem & {
-  kind: EquipmentTypeGroup["kind"]
-}
-
-function EquipmentItemCard({ item }: { item: EquipmentCardItem }) {
-  const label = item.kind === "paralleling" ? "Sources working" : item.kind === "chargers" ? "Status" : "Current power"
-  const value = item.kind === "paralleling" ? "2 / 2" : item.power.replace("Current power: ", "")
-
-  return (
-    <article className="flex min-h-40 flex-col rounded-[12px] border border-[#e6e6e6] bg-white p-4">
-      <div className="flex min-w-0 items-center gap-2 text-[#757575]">
-        <EquipmentTypeIcon kind={item.kind} />
-        <h4 className="truncate font-['Inter:Medium',sans-serif] text-[14px] font-medium leading-5 text-[#0a0a0a]">{item.id}</h4>
-        <OnlineStatus className="ml-auto shrink-0" />
-      </div>
-      <div className="mt-5">
-        <p className="text-[14px] leading-5 text-[#757575]">{label}</p>
-        <div className="mt-2 font-['Inter:Regular',sans-serif] text-[16px] leading-6 text-[#0a0a0a]">
-          {item.kind === "chargers" ? <StatusBadge charge={item.charge} status={item.status} /> : value}
-        </div>
-      </div>
-      <div className="mt-auto pt-4 text-[14px] leading-5"><Incidents emptyClassName="text-[#757575]" incidents={item.incidents} /></div>
-    </article>
-  )
-}
-
-function EquipmentCardsEntityRow({
-  entity,
-  expanded,
-  onToggle,
-}: {
-  entity: EquipmentEntity
-  expanded: boolean
-  onToggle: () => void
-}) {
-  const contentId = `equipment-card-${entity.id.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`
-
-  return (
-    <article className="overflow-hidden rounded-[12px] border border-[#e6e6e6] bg-white">
-      <button
-        aria-controls={expanded ? contentId : undefined}
-        aria-expanded={expanded}
-        className={`grid min-h-[72px] w-full ${rowColumns} items-center gap-3 px-4 py-3 text-left text-[14px] leading-5 text-[#0a0a0a] transition-colors duration-150 hover:bg-[#fafafa] focus-visible:relative focus-visible:z-10 focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2357d9]`}
-        onClick={onToggle}
-        type="button"
-      >
-        <span className="min-w-0">
-          <span className="flex min-w-0 items-center gap-2 font-['Inter:Medium',sans-serif] font-medium">
-            <span className="shrink-0 text-[#757575]"><EquipmentTypeIcon kind={entity.kind} /></span>
-            <span className="truncate">{entity.id}</span>
-          </span>
-          <OnlineStatus className="mt-0.5" />
-        </span>
-        <StatusBadge status="operational" />
-        <span>{entity.load === undefined ? "" : <PowerLoad value={entity.load} />}</span>
-        <Incidents incidents={entity.incidents} />
-        <span className="grid size-8 place-items-center"><Chevron expanded={expanded} /></span>
-      </button>
-      {expanded && (
-        <div id={contentId} className="border-t border-[#e6e6e6] bg-[#fafafa] p-5">
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            {entity.groups.flatMap((group) => group.items.map((item) => ({ ...item, kind: group.kind }))).map((item) => (
-              <EquipmentItemCard key={`${item.kind}-${item.id}`} item={item} />
-            ))}
-          </div>
-        </div>
-      )}
-    </article>
-  )
-}
-
-function ViewSwitcher({ view, onChange }: { view: "table" | "cards"; onChange: (view: "table" | "cards") => void }) {
-  const button = "h-6 rounded-[4px] px-2 font-['Inter:Medium',sans-serif] text-[12px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9]"
-
-  return (
-    <div aria-label="Equipment view" className="flex h-7 items-center gap-0.5 rounded-[6px] bg-[#f5f5f5] p-0.5" role="group">
-      {(["table", "cards"] as const).map((option) => {
-        const selected = view === option
-        return (
-          <button
-            key={option}
-            aria-pressed={selected}
-            className={`${button} ${selected ? "bg-white text-[#0a0a0a] shadow-[0_1px_3px_rgba(0,0,0,0.1)]" : "text-[#757575]"}`}
-            onClick={() => onChange(option)}
-            type="button"
-          >
-            {option === "table" ? "Table" : "Cards"}
-          </button>
-        )
-      })}
-    </div>
-  )
-}
-
 export default function SiteEquipmentOverview() {
-  const [view, setView] = useState<"table" | "cards">("table")
   const [expandedTableIds, setExpandedTableIds] = useState<Set<string>>(() => new Set())
-  const [expandedCardIds, setExpandedCardIds] = useState<Set<string>>(() => new Set(["DS-100", "Booster B, UN-400"]))
 
   const toggleTableEntity = (id: string) => {
     setExpandedTableIds((current) => {
@@ -509,50 +426,27 @@ export default function SiteEquipmentOverview() {
     })
   }
 
-  const toggleCardEntity = (id: string) => {
-    setExpandedCardIds((current) => {
-      const next = new Set(current)
-      if (next.has(id)) next.delete(id)
-      else next.add(id)
-      return next
-    })
-  }
-
   return (
     <section className="max-w-[1080px] shrink-0 w-full" data-name="section -overview equipment">
-      <div className="flex items-center justify-between gap-4 pb-4">
+      <div className="flex items-center gap-2 pb-4">
         <div className="flex items-center gap-2">
           <h2 className="font-['Inter:Medium',sans-serif] text-[16px] font-medium leading-6 tracking-[-0.176px] text-[#0a0a0a]">Equipment</h2>
           <RadioIcon className="size-5 text-[#0a0a0a]" />
         </div>
-        <ViewSwitcher view={view} onChange={setView} />
       </div>
 
-      {view === "table" ? (
-        <div className="overflow-x-auto">
-          <div className="min-w-[748px] space-y-6">
-            {entityGroups.map((group) => (
-              <EquipmentEntityGroup
-                key={group.id}
-                {...group}
-                expandedIds={expandedTableIds}
-                onToggle={toggleTableEntity}
-              />
-            ))}
-          </div>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-[12px] border border-[#e6e6e6] bg-white divide-y divide-[#e6e6e6]">
-          {entityGroups.flatMap((group) => group.entities).map((entity) => (
-            <EquipmentCardsEntityRow
-              key={entity.id}
-              entity={entity}
-              expanded={expandedCardIds.has(entity.id)}
-              onToggle={() => toggleCardEntity(entity.id)}
+      <div className="overflow-x-auto">
+        <div className="min-w-[748px] space-y-6">
+          {entityGroups.map((group) => (
+            <EquipmentEntityGroup
+              key={group.id}
+              {...group}
+              expandedIds={expandedTableIds}
+              onToggle={toggleTableEntity}
             />
           ))}
         </div>
-      )}
+      </div>
     </section>
   )
 }

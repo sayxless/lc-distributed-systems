@@ -14,7 +14,6 @@ import SiteScreenWrapper from "@/SiteScreenWrapper"
 import PrototypeLauncher from "@/PrototypeLauncher"
 
 type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment"
-type EquipmentPresentation = "overview" | "separateTab"
 
 // ─── Sidebar click-target Y coordinates ────────────────────────────────────
 //
@@ -260,14 +259,10 @@ function PrototypeSettings({
   onOpenAllScreens,
   equipmentEnabled,
   onEquipmentEnabledChange,
-  equipmentPresentation,
-  onEquipmentPresentationChange,
 }: {
   onOpenAllScreens: () => void
   equipmentEnabled: boolean
   onEquipmentEnabledChange: (enabled: boolean) => void
-  equipmentPresentation: EquipmentPresentation
-  onEquipmentPresentationChange: (presentation: EquipmentPresentation) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -326,7 +321,7 @@ function PrototypeSettings({
               type="button"
               role="switch"
               aria-checked={equipmentEnabled}
-              aria-label="Show Equipment tab on the site page"
+              aria-label="Show site equipment on the site page"
               onClick={() => onEquipmentEnabledChange(!equipmentEnabled)}
               className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${equipmentEnabled ? "bg-[#00c86b]" : "bg-[#bdbdbd]"}`}
             >
@@ -335,32 +330,6 @@ function PrototypeSettings({
                 className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform duration-150 ${equipmentEnabled ? "translate-x-4" : "translate-x-0"}`}
               />
             </button>
-          </div>
-          <div className="mt-1 px-3 pb-2">
-            <div
-              aria-label="Equipment display"
-              className={`flex rounded-lg bg-[#f5f5f5] p-0.5 ${equipmentEnabled ? "" : "opacity-50"}`}
-              role="group"
-            >
-              <button
-                type="button"
-                disabled={!equipmentEnabled}
-                aria-pressed={equipmentPresentation === "overview"}
-                onClick={() => onEquipmentPresentationChange("overview")}
-                className={`min-h-8 flex-1 rounded-md px-2 text-xs font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] disabled:cursor-not-allowed ${equipmentPresentation === "overview" ? "bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(16,24,40,0.12)]" : "text-[#666] hover:text-[#30353d]"}`}
-              >
-                Overview
-              </button>
-              <button
-                type="button"
-                disabled={!equipmentEnabled}
-                aria-pressed={equipmentPresentation === "separateTab"}
-                onClick={() => onEquipmentPresentationChange("separateTab")}
-                className={`min-h-8 flex-1 rounded-md px-2 text-xs font-medium whitespace-nowrap transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] disabled:cursor-not-allowed ${equipmentPresentation === "separateTab" ? "bg-white text-[#0a0a0a] shadow-[0_1px_2px_rgba(16,24,40,0.12)]" : "text-[#666] hover:text-[#30353d]"}`}
-              >
-                Separate tab
-              </button>
-            </div>
           </div>
         </section>
       )}
@@ -382,27 +351,16 @@ function PrototypeSettings({
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("site")
-  const [equipmentEnabled, setEquipmentEnabled] = useState(false)
-  const [equipmentPresentation, setEquipmentPresentation] =
-    useState<EquipmentPresentation>("overview")
+  const [equipmentEnabled, setEquipmentEnabled] = useState(true)
 
   useNavigation(screen, setScreen)
 
-  const equipmentOnOverview =
-    equipmentEnabled && equipmentPresentation === "overview"
-  const equipmentInSeparateTab =
-    equipmentEnabled && equipmentPresentation === "separateTab"
+  const equipmentOnOverview = equipmentEnabled
+  const equipmentTabEnabled = equipmentEnabled
 
   function handleEquipmentEnabledChange(enabled: boolean) {
     setEquipmentEnabled(enabled)
     if (!enabled && screen === "siteEquipment") {
-      setScreen("siteOverview")
-    }
-  }
-
-  function handleEquipmentPresentationChange(presentation: EquipmentPresentation) {
-    setEquipmentPresentation(presentation)
-    if (presentation === "overview" && screen === "siteEquipment") {
       setScreen("siteOverview")
     }
   }
@@ -451,7 +409,7 @@ export default function App() {
           <div className="site-overview-screen absolute inset-0">
             <SiteOverviewV
               equipmentOnOverview={equipmentOnOverview}
-              equipmentTabEnabled={equipmentInSeparateTab}
+              equipmentTabEnabled={equipmentTabEnabled}
             />
           </div>
         )}
@@ -459,7 +417,7 @@ export default function App() {
           <div className="site-overview-screen absolute inset-0">
             <SiteOverviewV2
               equipmentOnOverview={equipmentOnOverview}
-              equipmentTabEnabled={equipmentInSeparateTab}
+              equipmentTabEnabled={equipmentTabEnabled}
             />
           </div>
         )}
@@ -467,13 +425,13 @@ export default function App() {
           <div className="site-overview-screen absolute inset-0">
             <SiteOverviewCards
               equipmentOnOverview={equipmentOnOverview}
-              equipmentTabEnabled={equipmentInSeparateTab}
+              equipmentTabEnabled={equipmentTabEnabled}
             />
           </div>
         )}
         {screen === "siteEquipment" && (
           <div className="site-overview-screen absolute inset-0">
-            <SiteEquipment equipmentTabEnabled={equipmentInSeparateTab} />
+            <SiteEquipment equipmentTabEnabled={equipmentTabEnabled} />
           </div>
         )}
       </div>
@@ -493,8 +451,6 @@ export default function App() {
       <PrototypeSettings
         equipmentEnabled={equipmentEnabled}
         onEquipmentEnabledChange={handleEquipmentEnabledChange}
-        equipmentPresentation={equipmentPresentation}
-        onEquipmentPresentationChange={handleEquipmentPresentationChange}
         onOpenAllScreens={() => setScreen("home")}
       />
     </div>

@@ -1825,7 +1825,6 @@ function Col7() {
         <div className="flex flex-col justify-center size-full">
           <div className="content-stretch flex flex-col items-start justify-center relative size-full">
             <Container17 />
-            <div className="bg-[#e6e6e6] h-px relative shrink-0 w-full" data-name="divider" />
           </div>
         </div>
       </div>
@@ -2240,7 +2239,6 @@ function Col9() {
         <div className="flex flex-col justify-center size-full">
           <div className="content-stretch flex flex-col items-start justify-center relative size-full">
             <Container38 />
-            <div className="bg-[#e6e6e6] h-px relative shrink-0 w-full" data-name="divider" />
           </div>
         </div>
       </div>
@@ -2256,7 +2254,7 @@ function Col9() {
 
 function ColChargers() {
   return (
-    <div className="content-stretch flex items-center relative shrink-0" data-name="col chargers">
+    <div className="after:absolute after:inset-x-0 after:top-[47px] after:z-10 after:h-px after:bg-[#e6e6e6] after:content-[''] content-stretch flex items-center relative shrink-0" data-name="col chargers">
       <Col7 />
       <Col8 />
       <Col9 />
