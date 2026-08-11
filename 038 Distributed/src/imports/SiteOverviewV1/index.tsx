@@ -1,3 +1,4 @@
+import { useState } from "react";
 import svgPaths from "./svg-g8tgddqzze";
 import imgCircleProgress from "./30363b45a3245bd9bccf8a502bcddde497fd3a13.png";
 import SiteEquipmentOverview from "@/SiteEquipmentOverview";
@@ -7,6 +8,7 @@ type SiteOverviewProps = {
   equipmentOnOverview?: boolean;
   activeSiteTab?: "overview" | "equipment";
 };
+type GroupSeparatorMode = "with" | "without";
 type AvatarProps = {
   className?: string;
   size?: "md" | "lg";
@@ -2773,7 +2775,76 @@ function Content2() {
   );
 }
 
-function Container8() {
+function ChevronDownIcon({ className }: { className?: string }) {
+  return (
+    <svg aria-hidden="true" className={className} fill="none" viewBox="0 0 16 16">
+      <path d="m4 6 4 4 4-4" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" className="size-4 shrink-0 text-[#0a0a0a]" fill="none" viewBox="0 0 16 16">
+      <path d="m3.5 8 2.75 2.75 6.25-6.25" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function GroupViewSwitcher({
+  separatorMode,
+  onSeparatorModeChange,
+}: {
+  separatorMode: GroupSeparatorMode;
+  onSeparatorModeChange: (mode: GroupSeparatorMode) => void;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const selectSeparatorMode = (mode: GroupSeparatorMode) => {
+    onSeparatorModeChange(mode);
+    setIsOpen(false);
+  };
+
+  const optionClassName = (isSelected: boolean) => [
+    "flex min-h-8 w-full items-center justify-between rounded-[6px] px-3 py-1.5 text-left font-['Inter:Regular',sans-serif] text-[12px] leading-5 transition-colors",
+    isSelected ? "bg-[#f5f5f5] text-[#0a0a0a]" : "text-[#525252] hover:bg-[#fafafa]",
+  ].join(" ");
+
+  return (
+    <div className="absolute right-0 top-[8px] z-20 h-[28px] w-[158px] rounded-[6px]" data-name=".local -button -view">
+      <div className="flex size-full items-center justify-center">
+        <div className="flex size-full items-center justify-center gap-[2px] rounded-[6px] bg-[#f5f5f5] p-[2px]">
+          <details className="relative h-full w-[62px] shrink-0" onToggle={(event) => setIsOpen(event.currentTarget.open)} open={isOpen}>
+            <summary aria-label="Group display settings" className="flex h-full w-full cursor-pointer list-none items-center justify-center gap-1 rounded-[4px] bg-white px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#0a0a0a] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] [&::-webkit-details-marker]:hidden focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9]">
+              Group
+              <ChevronDownIcon className="size-3 shrink-0" />
+            </summary>
+            <div aria-label="Group separator options" className="absolute right-0 top-[calc(100%+8px)] z-30 w-[196px] rounded-[8px] border border-[#e6e6e6] bg-white p-1 shadow-[0_8px_16px_rgba(16,24,40,0.12)]">
+              <button aria-pressed={separatorMode === "with"} className={optionClassName(separatorMode === "with")} onClick={() => selectSeparatorMode("with")} type="button">
+                With separators
+                {separatorMode === "with" ? <CheckIcon /> : null}
+              </button>
+              <button aria-pressed={separatorMode === "without"} className={optionClassName(separatorMode === "without")} onClick={() => selectSeparatorMode("without")} type="button">
+                Without separators
+                {separatorMode === "without" ? <CheckIcon /> : null}
+              </button>
+            </div>
+          </details>
+          <button aria-pressed="false" className="relative h-full w-[41px] shrink-0 cursor-pointer rounded-[4px] px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#757575]" data-prototype-view="table" type="button">Table</button>
+          <button aria-pressed="false" className="relative h-full w-[42px] shrink-0 cursor-pointer rounded-[4px] px-0 font-['Inter:Medium',sans-serif] text-[12px] font-medium text-[#757575]" data-prototype-view="cards" type="button">Cards</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Container8({
+  separatorMode,
+  onSeparatorModeChange,
+}: {
+  separatorMode: GroupSeparatorMode;
+  onSeparatorModeChange: (mode: GroupSeparatorMode) => void;
+}) {
   return (
     <div className="relative shrink-0 w-full" data-name="container">
       <div className="content-stretch flex items-start pb-[12px] pt-[8px] px-[8px] relative size-full">
@@ -2823,23 +2894,15 @@ function Container8() {
             </div>
           </div>
         </div>
-        <div className="absolute h-[28px] right-0 rounded-[6px] top-[8px] w-[158px]" data-name=".local -button -view">
-          <div className="flex flex-row items-center justify-center size-full">
-            <div className="content-stretch flex gap-[2px] items-center justify-center p-[2px] relative rounded-[6px] size-full bg-[#f5f5f5]">
-              <button aria-pressed="true" className="bg-white cursor-default font-['Inter:Medium',sans-serif] font-medium h-full px-[8px] relative rounded-[4px] shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1)] text-[#0a0a0a] text-[12px]" data-prototype-view="group" type="button">Group</button>
-              <button aria-pressed="false" className="cursor-pointer font-['Inter:Medium',sans-serif] font-medium h-full px-[8px] relative rounded-[4px] text-[#757575] text-[12px]" data-prototype-view="table" type="button">Table</button>
-              <button aria-pressed="false" className="cursor-pointer font-['Inter:Medium',sans-serif] font-medium h-full px-[8px] relative rounded-[4px] text-[#757575] text-[12px]" data-prototype-view="cards" type="button">Cards</button>
-            </div>
-          </div>
-        </div>
+        <GroupViewSwitcher separatorMode={separatorMode} onSeparatorModeChange={onSeparatorModeChange} />
       </div>
     </div>
   );
 }
 
-function Container9() {
+function Container9({ visible }: { visible: boolean }) {
   return (
-    <div className="hidden bg-[#fafafa] relative shrink-0 w-full" data-name="container">
+    <div className={`${visible ? "block" : "hidden"} bg-[#fafafa] relative shrink-0 w-full`} data-name="container">
       <div aria-hidden className="absolute border-[#e6e6e6] border-b border-solid inset-0 pointer-events-none" />
       <div className="content-stretch flex gap-[8px] items-start px-[16px] py-[12px] relative size-full">
         <div className="relative shrink-0 size-[20px]" data-name="icon">
@@ -3935,9 +3998,9 @@ function LocalLiveUnitItem3() {
   );
 }
 
-function Container47() {
+function Container47({ visible }: { visible: boolean }) {
   return (
-    <div className="hidden bg-[#fafafa] relative shrink-0 w-full" data-name="container">
+    <div className={`${visible ? "block" : "hidden"} bg-[#fafafa] relative shrink-0 w-full`} data-name="container">
       <div aria-hidden className="absolute border-[#e6e6e6] border-b border-solid inset-0 pointer-events-none" />
       <div className="content-stretch flex gap-[8px] items-start px-[16px] py-[12px] relative size-full">
         <div className="overflow-clip relative shrink-0 size-[20px]" data-name=".local -icon -micro">
@@ -4563,16 +4626,16 @@ function Row1() {
   );
 }
 
-function List() {
+function List({ showSectionHeaders }: { showSectionHeaders: boolean }) {
   return (
     <div className="relative rounded-[12px] shrink-0 w-full" data-name="list">
       <div className="content-stretch flex flex-col items-start overflow-clip relative rounded-[inherit] size-full">
-        <Container9 />
+        <Container9 visible={showSectionHeaders} />
         <LocalLiveUnitItem />
         <LocalLiveUnitItem1 />
         <LocalLiveUnitItem2 />
         <LocalLiveUnitItem3 />
-        <Container47 />
+        <Container47 visible={showSectionHeaders} />
         <Row />
         <Row1 />
       </div>
@@ -4582,10 +4645,13 @@ function List() {
 }
 
 function LocalUnitsChargers() {
+  const [separatorMode, setSeparatorMode] = useState<GroupSeparatorMode>("without");
+  const showSectionHeaders = separatorMode === "with";
+
   return (
     <div className="content-stretch flex flex-col items-start relative rounded-[12px] shrink-0 w-full" data-name=".local-units-chargers">
-      <Container8 />
-      <List />
+      <Container8 separatorMode={separatorMode} onSeparatorModeChange={setSeparatorMode} />
+      <List showSectionHeaders={showSectionHeaders} />
     </div>
   );
 }
