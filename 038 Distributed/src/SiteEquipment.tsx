@@ -1169,16 +1169,6 @@ function EquipmentContent() {
   return (
     <div className="w-full pb-24" data-name="site equipment content">
       <main id="site-equipment-content" className="mx-auto w-full max-w-[1080px]">
-        <header className="mb-7">
-          <div>
-            <h1 className="font-['Inter:Medium',sans-serif] text-[18px] font-medium leading-7 tracking-[-0.252px] text-[#0a0a0a]">
-              Site equipment
-            </h1>
-            <p className="mt-0.5 text-[13px] leading-5 tracking-[-0.0325px] text-[#757575]">
-              Manage unit availability over time.
-            </p>
-          </div>
-        </header>
         <div className="overflow-hidden rounded-[12px] border border-[#e6e6e6] bg-white divide-y divide-[#e6e6e6]">
           {sectionedEntities.map((entity) => (
             <SectionedEntityRow
