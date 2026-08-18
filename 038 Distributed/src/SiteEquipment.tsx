@@ -3,6 +3,7 @@ import { useLayoutEffect, useRef, useState } from "react"
 import SiteOverviewV2 from "@/imports/SiteOverview/index"
 import svgPaths from "@/imports/SiteOverview/svg-hvtmtwveqq"
 import EquipmentTypeIcon, { type EquipmentKind } from "@/EquipmentTypeIcon"
+import StatusIcon from "@/StatusIcon"
 
 type Incident = {
   severity: "critical" | "high" | "medium" | "low"
@@ -320,29 +321,19 @@ function MoreIcon() {
 
 function ConnectionBadge() {
   return (
-    <span className="inline-flex h-6 items-center gap-1.5 rounded-[6px] border border-[#e6e6e6] px-2 text-[13px] leading-5 text-[#00c86b]">
-      <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16 16">
-        <path d="M2.4 6.7a8 8 0 0 1 11.2 0M4.8 9.2a4.6 4.6 0 0 1 6.4 0M7.1 11.7a1.3 1.3 0 0 1 1.8 0" stroke="currentColor" strokeLinecap="round" strokeWidth="1.25" />
-      </svg>
+    <span className="inline-flex h-7 items-center gap-1.5 rounded-[6px] border border-[#e6e6e6] px-2 text-[13px] leading-5 text-[#00c86b]">
+      <StatusIcon name="online" />
       Online
     </span>
   )
 }
 
 function AvailableIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4" fill="none" viewBox="0 0 16.5 16.5">
-      <path clipRule="evenodd" d={svgPaths.p1d51bb80} fill="#1DCC6E" fillRule="evenodd" />
-    </svg>
-  )
+  return <StatusIcon name="available" />
 }
 
 function PreparingIcon() {
-  return (
-    <span aria-hidden="true" className="relative size-4 rounded-full border-2 border-[#1dcc6e]">
-      <span className="absolute inset-[3px] rounded-full border border-[#1dcc6e]" />
-    </span>
-  )
+  return <StatusIcon name="preparing" />
 }
 
 function ChargerStatus({ status }: { status: NonNullable<EquipmentRow["status"]> }) {
@@ -353,8 +344,8 @@ function ChargerStatus({ status }: { status: NonNullable<EquipmentRow["status"]>
   }[status]
 
   return (
-    <span className="inline-flex h-6 items-center gap-1.5 rounded-[6px] border border-[#e6e6e6] px-2 text-[13px] leading-5 text-[#0a0a0a]">
-      {status === "charging" ? <span aria-hidden="true" className="size-4" data-name="circle progress" /> : status === "preparing" ? <PreparingIcon /> : <AvailableIcon />}
+    <span className="inline-flex h-7 items-center gap-1.5 rounded-[6px] border border-[#e6e6e6] px-2 text-[13px] leading-5 text-[#0a0a0a]">
+      {status === "charging" ? <StatusIcon name="charging" /> : status === "preparing" ? <PreparingIcon /> : <AvailableIcon />}
       {label}
     </span>
   )

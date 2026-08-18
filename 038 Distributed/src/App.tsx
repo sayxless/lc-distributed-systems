@@ -5,15 +5,16 @@ import Gensets from "@/imports/Gensets/index"
 import Bess from "@/imports/Bess/index"
 import ParallelingPanels from "@/imports/ParallelingPanels/index"
 import Chargers from "@/imports/Chargers-2/index"
-import SiteOverviewV from "@/imports/SiteOverviewV1/index"
-import SiteOverviewV2 from "@/imports/SiteOverview/index"
-import SiteOverviewCards from "@/SiteOverviewCards"
 import SiteEquipment from "@/SiteEquipment"
 import ChargersSidebarItem from "@/ChargersSidebarItem"
 import SiteScreenWrapper from "@/SiteScreenWrapper"
 import PrototypeLauncher from "@/PrototypeLauncher"
+import { defaultSiteId, sites } from "@/prototypeData"
+import EquipmentPage, { equipmentDetailTargets, type EquipmentDetailTarget, type EquipmentSectionId } from "@/EquipmentPage"
+import EquipmentDetailPage from "@/EquipmentDetailPage"
+import SiteOverviewPage from "@/SiteOverviewPage"
 
-type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment"
+type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail"
 
 // ─── Sidebar click-target Y coordinates ────────────────────────────────────
 //
@@ -87,7 +88,7 @@ const CHARGERS_COORDS: SidebarTargets = {
   paralleling: 363,
 }
 
-const coords: Record<Exclude<Screen, "site" | "home" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment">, SidebarTargets> =
+const coords: Record<Exclude<Screen, "site" | "home" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail">, SidebarTargets> =
   {
     distributed: ABS_COORDS,
     gensets: ABS_COORDS,
@@ -351,6 +352,8 @@ function PrototypeSettings({
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>("site")
+  const [selectedSiteId, setSelectedSiteId] = useState(defaultSiteId)
+  const [selectedEquipment, setSelectedEquipment] = useState<EquipmentDetailTarget | null>(null)
   const [equipmentEnabled, setEquipmentEnabled] = useState(true)
 
   useNavigation(screen, setScreen)
@@ -365,67 +368,143 @@ export default function App() {
     }
   }
 
+  function changeSite(offset: -1 | 1) {
+    const currentIndex = sites.findIndex((site) => site.id === selectedSiteId)
+    const nextIndex = (currentIndex + offset + sites.length) % sites.length
+    setSelectedSiteId(sites[nextIndex].id)
+  }
+
   const isSiteOverview =
     screen === "siteOverview" ||
     screen === "siteOverview2" ||
     screen === "siteOverviewCards" ||
     screen === "siteEquipment"
-  const hasSidebar = screen !== "home" && screen !== "site" && !isSiteOverview
+  const hasSidebar = false
+  const equipmentSectionByScreen: Partial<Record<Screen, EquipmentSectionId>> = {
+    units: "units",
+    distributed: "distributed",
+    chargers: "chargers",
+    gensets: "gensets",
+    bess: "bess",
+    paralleling: "paralleling",
+  }
+  const equipmentSection = equipmentSectionByScreen[screen]
+  const detailTargets = selectedEquipment ? equipmentDetailTargets(selectedEquipment.section) : []
+  const selectedEquipmentIndex = selectedEquipment
+    ? Math.max(0, detailTargets.findIndex((target) => target.id === selectedEquipment.id && target.partnerId === selectedEquipment.partnerId && target.site === selectedEquipment.site && target.system === selectedEquipment.system))
+    : 0
+
+  function changeEquipment(offset: -1 | 1) {
+    if (!detailTargets.length) return
+    const nextIndex = (selectedEquipmentIndex + offset + detailTargets.length) % detailTargets.length
+    setSelectedEquipment(detailTargets[nextIndex])
+  }
 
   return (
     <div
       className="w-screen h-screen relative overflow-hidden"
+      data-selected-site-id={selectedSiteId}
     >
       <div className="absolute inset-0">
         {screen === "home" && <PrototypeLauncher onOpen={setScreen} />}
-        {screen === "distributed" && (
-          <div className="distributed-screen absolute inset-0">
-            <DistributedSystems />
-          </div>
+        {equipmentSection && (
+          <EquipmentPage
+            activeSection={equipmentSection}
+            onNavigate={(section) => {
+              setScreen(
+                section === "units"
+                  ? "units"
+                  : section === "distributed"
+                    ? "distributed"
+                    : section === "chargers"
+                      ? "chargers"
+                      : section === "gensets"
+                        ? "gensets"
+                        : section === "bess"
+                          ? "bess"
+                          : "paralleling",
+              )
+            }}
+            onOpenSites={() => setScreen("site")}
+            onOpenDetail={(target) => {
+              setSelectedEquipment(target)
+              setScreen("equipmentDetail")
+            }}
+          />
         )}
-        {screen === "units" && (
-          <div className="units-screen absolute inset-0">
-            <Units />
-          </div>
+        {screen === "equipmentDetail" && selectedEquipment && (
+          <EquipmentDetailPage
+            target={selectedEquipment}
+            onOpenSites={() => setScreen("site")}
+            position={selectedEquipmentIndex + 1}
+            total={detailTargets.length}
+            onPrevious={() => changeEquipment(-1)}
+            onNext={() => changeEquipment(1)}
+            onBack={() => {
+              setScreen(
+                selectedEquipment.section === "units"
+                  ? "units"
+                  : selectedEquipment.section === "distributed"
+                    ? "distributed"
+                    : selectedEquipment.section === "chargers"
+                      ? "chargers"
+                      : selectedEquipment.section === "gensets"
+                        ? "gensets"
+                        : selectedEquipment.section === "bess"
+                          ? "bess"
+                          : "paralleling",
+              )
+            }}
+          />
         )}
-        {screen === "gensets" && (
-          <div className="gensets-screen absolute inset-0">
-            <Gensets />
-          </div>
+        {screen === "site" && (
+          <SiteScreenWrapper
+            onOpenSite={(siteId) => {
+              setSelectedSiteId(siteId)
+              setScreen("siteOverview")
+            }}
+            onOpenEquipment={() => setScreen("units")}
+          />
         )}
-        {screen === "bess" && (
-          <div className="bess-screen absolute inset-0">
-            <Bess />
-          </div>
-        )}
-        {screen === "paralleling" && (
-          <div className="paralleling-screen absolute inset-0">
-            <ParallelingPanels />
-          </div>
-        )}
-        {screen === "chargers" && <Chargers />}
-        {screen === "site" && <SiteScreenWrapper />}
         {screen === "siteOverview" && (
           <div className="site-overview-screen absolute inset-0">
-            <SiteOverviewV
+            <SiteOverviewPage
+              siteId={selectedSiteId}
               equipmentOnOverview={equipmentOnOverview}
               equipmentTabEnabled={equipmentTabEnabled}
+              onOpenSites={() => setScreen("site")}
+              onOpenEquipment={() => setScreen("units")}
+              onOpenEquipmentTab={() => setScreen("siteEquipment")}
+              onPreviousSite={() => changeSite(-1)}
+              onNextSite={() => changeSite(1)}
             />
           </div>
         )}
         {screen === "siteOverview2" && (
           <div className="site-overview-screen absolute inset-0">
-            <SiteOverviewV2
+            <SiteOverviewPage
+              siteId={selectedSiteId}
               equipmentOnOverview={equipmentOnOverview}
               equipmentTabEnabled={equipmentTabEnabled}
+              onOpenSites={() => setScreen("site")}
+              onOpenEquipment={() => setScreen("units")}
+              onOpenEquipmentTab={() => setScreen("siteEquipment")}
+              onPreviousSite={() => changeSite(-1)}
+              onNextSite={() => changeSite(1)}
             />
           </div>
         )}
         {screen === "siteOverviewCards" && (
           <div className="site-overview-screen absolute inset-0">
-            <SiteOverviewCards
+            <SiteOverviewPage
+              siteId={selectedSiteId}
               equipmentOnOverview={equipmentOnOverview}
               equipmentTabEnabled={equipmentTabEnabled}
+              onOpenSites={() => setScreen("site")}
+              onOpenEquipment={() => setScreen("units")}
+              onOpenEquipmentTab={() => setScreen("siteEquipment")}
+              onPreviousSite={() => changeSite(-1)}
+              onNextSite={() => changeSite(1)}
             />
           </div>
         )}
@@ -440,7 +519,7 @@ export default function App() {
         <NavOverlay
           targets={
             coords[
-              (screen as Exclude<Screen, "site" | "home" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment">)
+              (screen as Exclude<Screen, "site" | "home" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail">)
             ]
           }
           current={screen}

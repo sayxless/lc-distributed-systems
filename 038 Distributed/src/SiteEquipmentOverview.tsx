@@ -1,5 +1,6 @@
 import { useState } from "react"
 import EquipmentTypeIcon, { type EquipmentKind } from "@/EquipmentTypeIcon"
+import StatusIcon from "@/StatusIcon"
 import svgPaths from "@/imports/SiteOverviewV1/svg-g8tgddqzze"
 
 type IncidentSeverity = "high" | "medium" | "low"
@@ -204,32 +205,18 @@ function RadioIcon({ className = "size-4" }: { className?: string }) {
 function OnlineStatus({ className = "" }: { className?: string }) {
   return (
     <span className={`inline-flex items-center gap-1 font-['Inter:Regular',sans-serif] text-[13px] leading-5 tracking-[-0.0325px] text-[#1dcc6e] ${className}`}>
-      <span aria-hidden="true" className="relative size-4">
-        <span className="absolute inset-[17.08%_8.75%_16.67%_8.75%]">
-          <svg className="block size-full" fill="none" viewBox="0 0 13.2001 10.5999">
-            <path clipRule="evenodd" d={svgPaths.p2f173600} fill="currentColor" fillRule="evenodd" />
-          </svg>
-        </span>
-      </span>
+      <StatusIcon name="online" />
       Online
     </span>
   )
 }
 
 function CircleProgressIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4 shrink-0 text-[#1dcc6e]" fill="none" viewBox="0 0 16 16">
-      <path d="M8 1.25a6.75 6.75 0 1 0 6.54 8.43" stroke="currentColor" strokeLinecap="round" strokeWidth="2" />
-    </svg>
-  )
+  return <StatusIcon name="charging" />
 }
 
 function AvailableIcon() {
-  return (
-    <svg aria-hidden="true" className="size-4 shrink-0" fill="none" viewBox="0 0 16.5 16.5">
-      <path clipRule="evenodd" d={svgPaths.p1d51bb80} fill="#1DCC6E" fillRule="evenodd" />
-    </svg>
-  )
+  return <StatusIcon name="available" />
 }
 
 function StatusBadge({ status, charge }: Pick<EquipmentItem, "status" | "charge">) {
