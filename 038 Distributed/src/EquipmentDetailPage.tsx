@@ -4,7 +4,11 @@ import StatusIcon from "@/StatusIcon"
 import type { EquipmentDetailTarget, EquipmentSectionId } from "@/EquipmentPage"
 import { chartValuesFor } from "@/chartVariants"
 import OperationalEquipmentList from "@/OperationalEquipmentList"
-import type { OperationalEquipmentView } from "@/OperationalEquipmentList"
+import type {
+  OperationalEquipmentHealthFilter,
+  OperationalEquipmentPresentation,
+} from "@/OperationalEquipmentList"
+import { equipmentAttentionCount } from "@/OperationalEquipmentList"
 
 type EquipmentDetailPageProps = {
   target: EquipmentDetailTarget
@@ -15,17 +19,11 @@ type EquipmentDetailPageProps = {
   onPrevious: () => void
   onNext: () => void
   onOpenDetail: (target: EquipmentDetailTarget) => void
-  onOpenEquipmentSection?: (
-    section: EquipmentSectionId,
-    system: { id: string kind: "unit" | "distributed" },
-  ) => void
-  operationalEquipmentView: OperationalEquipmentView
-  onOperationalEquipmentViewChange: (mode: OperationalEquipmentView) => void
   overviewEquipmentVisible: boolean
-  overviewEquipmentView: Extract<
-    OperationalEquipmentView,
-    "table" | "groups" | "cards"
-  >
+  equipmentHealthFilter: OperationalEquipmentHealthFilter
+  onEquipmentHealthFilterChange: (filter: OperationalEquipmentHealthFilter) => void
+  equipmentPresentation: OperationalEquipmentPresentation
+  showEquipmentAttentionCount: boolean
 }
 
 const pageNames: Record<EquipmentSectionId, string> = {
@@ -396,10 +394,11 @@ export default function EquipmentDetailPage({
   onPrevious,
   onNext,
   onOpenDetail,
-  operationalEquipmentView,
-  onOperationalEquipmentViewChange,
   overviewEquipmentVisible,
-  overviewEquipmentView,
+  equipmentHealthFilter,
+  onEquipmentHealthFilterChange,
+  equipmentPresentation,
+  showEquipmentAttentionCount,
 }: EquipmentDetailPageProps) {
   const kind = target.section as EquipmentKind
   const pageName = pageNames[target.section]
@@ -419,6 +418,7 @@ export default function EquipmentDetailPage({
     "overview",
   )
   const isOperationalParent = isUnit || target.section === "distributed"
+  const attentionCount = equipmentAttentionCount({ parent: target })
 
   return (
     <div className="h-full overflow-y-auto bg-white font-['Inter:Regular',sans-serif] text-[14px] leading-5 text-[#0a0a0a]">
@@ -499,8 +499,8 @@ export default function EquipmentDetailPage({
             Overview
           </button>
           <button className="py-3 text-[#5c5c5c]">Incidents</button>
-          {isOperationalParent && (
-            <button
+              {isOperationalParent && (
+                <button
               type="button"
               onClick={() => setActiveTab("equipment")}
               className={`${
@@ -508,9 +508,14 @@ export default function EquipmentDetailPage({
                   ? "border-b-2 border-[#171717] font-medium"
                   : "text-[#5c5c5c]"
               } py-3`}
-            >
-              Equipment
-            </button>
+                >
+                  <span>Equipment</span>
+                  {showEquipmentAttentionCount && attentionCount > 0 && (
+                    <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] leading-5 text-[#525252]">
+                      {attentionCount}
+                    </span>
+                  )}
+                </button>
           )}
           <button className="py-3 text-[#5c5c5c]">Settings</button>
         </nav>
@@ -630,20 +635,6 @@ export default function EquipmentDetailPage({
                   </div>
                 </div>
               )}
-              {isOperationalParent && overviewEquipmentVisible && (
-                <section className="mt-10">
-                  <h2 className="mb-4 text-[16px] font-medium leading-6">
-                    Equipment
-                  </h2>
-                  <OperationalEquipmentList
-                    parent={target}
-                    onOpenDetail={onOpenDetail}
-                    displayMode={overviewEquipmentView}
-                    onDisplayModeChange={() => {}}
-                    showDisplayModeControl={false}
-                  />
-                </section>
-              )}
               <section className="mt-10">
                 <h2 className="font-medium">Overview 24 hours</h2>
                 <div className="mt-4 grid gap-x-8 gap-y-8 md:grid-cols-2">
@@ -656,6 +647,22 @@ export default function EquipmentDetailPage({
                   />
                 </div>
               </section>
+              {isOperationalParent && overviewEquipmentVisible && (
+                <section className="mt-10">
+                  <h2 className="mb-4 text-[16px] font-medium leading-6">
+                    {equipmentPresentation === "grouped"
+                      ? "Equipment to check"
+                      : "Equipment"}
+                  </h2>
+                  <OperationalEquipmentList
+                    parent={target}
+                    onOpenDetail={onOpenDetail}
+                    healthFilter={equipmentHealthFilter}
+                    onHealthFilterChange={onEquipmentHealthFilterChange}
+                    view={equipmentPresentation}
+                  />
+                </section>
+              )}
               <section className="mt-10">
                 <div className="flex items-center justify-between">
                   <h2 className="font-medium">Incidents now</h2>
@@ -696,8 +703,9 @@ export default function EquipmentDetailPage({
             <OperationalEquipmentList
               parent={target}
               onOpenDetail={onOpenDetail}
-              displayMode={operationalEquipmentView}
-              onDisplayModeChange={onOperationalEquipmentViewChange}
+              healthFilter={equipmentHealthFilter}
+              onHealthFilterChange={onEquipmentHealthFilterChange}
+              view={equipmentPresentation}
             />
           </div>
         )}

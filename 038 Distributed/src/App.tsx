@@ -18,12 +18,10 @@ import EquipmentPage, {
 } from "@/EquipmentPage"
 import EquipmentDetailPage from "@/EquipmentDetailPage"
 import SiteOverviewPage from "@/SiteOverviewPage"
-import type { OperationalEquipmentView } from "@/OperationalEquipmentList"
-
-type OverviewEquipmentView = Extract<
-  OperationalEquipmentView,
-  "table" | "groups" | "cards"
->
+import type {
+  OperationalEquipmentHealthFilter,
+  OperationalEquipmentPresentation,
+} from "@/OperationalEquipmentList"
 
 type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail"
 
@@ -275,20 +273,22 @@ function GearIcon() {
 
 function PrototypeSettings({
   onOpenAllScreens,
-  operationalEquipmentView,
-  onOperationalEquipmentViewChange,
+  equipmentPresentation,
+  onEquipmentPresentationChange,
+  showEquipmentAttentionCount,
+  onShowEquipmentAttentionCountChange,
   overviewEquipmentVisible,
   onOverviewEquipmentVisibleChange,
-  overviewEquipmentView,
-  onOverviewEquipmentViewChange,
 }: {
   onOpenAllScreens: () => void
-  operationalEquipmentView: OperationalEquipmentView
-  onOperationalEquipmentViewChange: (view: OperationalEquipmentView) => void
+  equipmentPresentation: OperationalEquipmentPresentation
+  onEquipmentPresentationChange: (
+    presentation: OperationalEquipmentPresentation,
+  ) => void
+  showEquipmentAttentionCount: boolean
+  onShowEquipmentAttentionCountChange: (visible: boolean) => void
   overviewEquipmentVisible: boolean
   onOverviewEquipmentVisibleChange: (visible: boolean) => void
-  overviewEquipmentView: OverviewEquipmentView
-  onOverviewEquipmentViewChange: (view: OverviewEquipmentView) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -340,41 +340,61 @@ function PrototypeSettings({
             All screens
           </button>
           <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
-            <p className="text-sm font-medium text-[#30353d]">Equipment view</p>
+            <p className="text-sm font-medium text-[#30353d]">
+              Equipment view
+            </p>
             <div
               role="group"
-              aria-label="Equipment display mode"
+              aria-label="Equipment presentation settings"
               className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1"
             >
               {([
-                "table",
-                "groups",
-                "cards",
-                "explorer",
-                "fullTable",
-              ] as const).map((view) => (
+                ["segment", "Segment"],
+                ["grouped", "Grouped view"],
+              ] as const).map(([presentation, label]) => (
                 <button
-                  key={view}
+                  key={presentation}
                   type="button"
-                  aria-pressed={operationalEquipmentView === view}
-                  onClick={() => onOperationalEquipmentViewChange(view)}
+                  aria-pressed={equipmentPresentation === presentation}
+                  onClick={() => onEquipmentPresentationChange(presentation)}
                   className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
-                    operationalEquipmentView === view
+                    equipmentPresentation === presentation
                       ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
                       : "text-[#666] hover:text-[#171717]"
                   }`}
                 >
-                  {view === "table"
-                    ? "Table"
-                    : view === "groups"
-                      ? "Groups"
-                      : view === "cards"
-                        ? "Cards"
-                        : view === "fullTable"
-                          ? "Full Table"
-                          : "Explorer"}
+                  {label}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="mt-1 border-t border-[#eeeeee] px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-[#30353d]">
+                Equipment attention count
+              </p>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={showEquipmentAttentionCount}
+                aria-label="Show equipment attention count"
+                onClick={() =>
+                  onShowEquipmentAttentionCountChange(
+                    !showEquipmentAttentionCount,
+                  )
+                }
+                className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                  showEquipmentAttentionCount ? "bg-[#1dcc6e]" : "bg-[#c9c9c9]"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-transform duration-150 ${
+                    showEquipmentAttentionCount
+                      ? "translate-x-4"
+                      : "translate-x-0.5"
+                  }`}
+                />
+              </button>
             </div>
           </div>
           <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
@@ -390,46 +410,18 @@ function PrototypeSettings({
                 onClick={() =>
                   onOverviewEquipmentVisibleChange(!overviewEquipmentVisible)
                 }
-                className={`relative h-6 w-10 rounded-full transition-colors duration-150 ${
+                className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
                   overviewEquipmentVisible ? "bg-[#1dcc6e]" : "bg-[#c9c9c9]"
                 }`}
               >
                 <span
-                  className={`absolute top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-transform duration-150 ${
+                  className={`pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-transform duration-150 ${
                     overviewEquipmentVisible
                       ? "translate-x-4"
                       : "translate-x-0.5"
                   }`}
                 />
               </button>
-            </div>
-            <div
-              role="group"
-              aria-label="Overview equipment display mode"
-              className={`mt-2 grid grid-cols-3 rounded-lg bg-[#f2f2f2] p-1 ${
-                overviewEquipmentVisible ? "" : "opacity-50"
-              }`}
-            >
-              {(["table", "groups", "cards"] as const).map((view) => (
-                <button
-                  key={view}
-                  type="button"
-                  disabled={!overviewEquipmentVisible}
-                  aria-pressed={overviewEquipmentView === view}
-                  onClick={() => onOverviewEquipmentViewChange(view)}
-                  className={`h-8 rounded-md px-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] disabled:cursor-not-allowed ${
-                    overviewEquipmentView === view
-                      ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
-                      : "text-[#666] hover:text-[#171717]"
-                  }`}
-                >
-                  {view === "table"
-                    ? "Table"
-                    : view === "groups"
-                      ? "Groups"
-                      : "Cards"}
-                </button>
-              ))}
             </div>
           </div>
         </section>
@@ -457,12 +449,14 @@ export default function App() {
     useState<EquipmentDetailTarget | null>(null)
   const [equipmentDetailOrigin, setEquipmentDetailOrigin] =
     useState<EquipmentDetailOrigin | null>(null)
-  const [operationalEquipmentView, setOperationalEquipmentView] =
-    useState<OperationalEquipmentView>("table")
   const [overviewEquipmentVisible, setOverviewEquipmentVisible] =
     useState(true)
-  const [overviewEquipmentView, setOverviewEquipmentView] =
-    useState<OverviewEquipmentView>("table")
+  const [equipmentHealthFilter, setEquipmentHealthFilter] =
+    useState<OperationalEquipmentHealthFilter>("all")
+  const [equipmentPresentation, setEquipmentPresentation] =
+    useState<OperationalEquipmentPresentation>("segment")
+  const [showEquipmentAttentionCount, setShowEquipmentAttentionCount] =
+    useState(true)
   const [equipmentSystemFilter, setEquipmentSystemFilter] =
     useState<EquipmentSystemFilter | null>(null)
 
@@ -608,11 +602,11 @@ export default function App() {
             total={detailTargets.length}
             onPrevious={() => changeEquipment(-1)}
             onNext={() => changeEquipment(1)}
-            operationalEquipmentView={operationalEquipmentView}
-            onOperationalEquipmentViewChange={setOperationalEquipmentView}
             overviewEquipmentVisible={overviewEquipmentVisible}
-            overviewEquipmentView={overviewEquipmentView}
-            onOpenEquipmentSection={openEquipmentSection}
+            equipmentHealthFilter={equipmentHealthFilter}
+            onEquipmentHealthFilterChange={setEquipmentHealthFilter}
+            equipmentPresentation={equipmentPresentation}
+            showEquipmentAttentionCount={showEquipmentAttentionCount}
             onBack={() => {
               if (equipmentDetailOrigin) {
                 setSelectedSiteId(equipmentDetailOrigin.siteId)
@@ -651,7 +645,10 @@ export default function App() {
             <SiteOverviewPage
               siteId={selectedSiteId}
               overviewEquipmentVisible={overviewEquipmentVisible}
-              overviewEquipmentView={overviewEquipmentView}
+              equipmentHealthFilter={equipmentHealthFilter}
+              onEquipmentHealthFilterChange={setEquipmentHealthFilter}
+              equipmentPresentation={equipmentPresentation}
+              showEquipmentAttentionCount={showEquipmentAttentionCount}
               onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
@@ -667,7 +664,10 @@ export default function App() {
             <SiteOverviewPage
               siteId={selectedSiteId}
               overviewEquipmentVisible={overviewEquipmentVisible}
-              overviewEquipmentView={overviewEquipmentView}
+              equipmentHealthFilter={equipmentHealthFilter}
+              onEquipmentHealthFilterChange={setEquipmentHealthFilter}
+              equipmentPresentation={equipmentPresentation}
+              showEquipmentAttentionCount={showEquipmentAttentionCount}
               onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
@@ -683,7 +683,10 @@ export default function App() {
             <SiteOverviewPage
               siteId={selectedSiteId}
               overviewEquipmentVisible={overviewEquipmentVisible}
-              overviewEquipmentView={overviewEquipmentView}
+              equipmentHealthFilter={equipmentHealthFilter}
+              onEquipmentHealthFilterChange={setEquipmentHealthFilter}
+              equipmentPresentation={equipmentPresentation}
+              showEquipmentAttentionCount={showEquipmentAttentionCount}
               onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
@@ -703,9 +706,10 @@ export default function App() {
               onPreviousSite={() => changeSite(-1)}
               onNextSite={() => changeSite(1)}
               onOpenDetail={openEquipmentDetail}
-              operationalEquipmentView={operationalEquipmentView}
-              onOperationalEquipmentViewChange={setOperationalEquipmentView}
-              onOpenEquipmentSection={openEquipmentSection}
+              equipmentHealthFilter={equipmentHealthFilter}
+              onEquipmentHealthFilterChange={setEquipmentHealthFilter}
+              equipmentPresentation={equipmentPresentation}
+              showEquipmentAttentionCount={showEquipmentAttentionCount}
             />
           </div>
         )}
@@ -725,12 +729,12 @@ export default function App() {
 
       <PrototypeSettings
         onOpenAllScreens={() => setScreen("home")}
-        operationalEquipmentView={operationalEquipmentView}
-        onOperationalEquipmentViewChange={setOperationalEquipmentView}
+        equipmentPresentation={equipmentPresentation}
+        onEquipmentPresentationChange={setEquipmentPresentation}
+        showEquipmentAttentionCount={showEquipmentAttentionCount}
+        onShowEquipmentAttentionCountChange={setShowEquipmentAttentionCount}
         overviewEquipmentVisible={overviewEquipmentVisible}
         onOverviewEquipmentVisibleChange={setOverviewEquipmentVisible}
-        overviewEquipmentView={overviewEquipmentView}
-        onOverviewEquipmentViewChange={setOverviewEquipmentView}
       />
     </div>
   )

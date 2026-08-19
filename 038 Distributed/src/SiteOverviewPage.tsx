@@ -9,9 +9,12 @@ import {
   type DistributedSystem,
   type IntegratedUnit,
 } from "@/prototypeData"
-import OperationalEquipmentList, {
-  type OperationalEquipmentView,
+import OperationalEquipmentList from "@/OperationalEquipmentList"
+import type {
+  OperationalEquipmentHealthFilter,
+  OperationalEquipmentPresentation,
 } from "@/OperationalEquipmentList"
+import { equipmentAttentionCount } from "@/OperationalEquipmentList"
 import type { EquipmentDetailTarget } from "@/EquipmentPage"
 
 type LiveEntity = { kind: "unit" unit: IntegratedUnit position: number } | {
@@ -910,7 +913,10 @@ function ChargesTimeline({ siteId }: { siteId: string }) {
 export default function SiteOverviewPage({
   siteId,
   overviewEquipmentVisible,
-  overviewEquipmentView,
+  equipmentHealthFilter,
+  onEquipmentHealthFilterChange,
+  equipmentPresentation,
+  showEquipmentAttentionCount,
   onOpenEquipmentDetail,
   equipmentTabEnabled,
   onOpenSites,
@@ -921,7 +927,10 @@ export default function SiteOverviewPage({
 }: {
   siteId: string
   overviewEquipmentVisible: boolean
-  overviewEquipmentView: Extract<OperationalEquipmentView, "table" | "groups" | "cards">
+  equipmentHealthFilter: OperationalEquipmentHealthFilter
+  onEquipmentHealthFilterChange: (filter: OperationalEquipmentHealthFilter) => void
+  equipmentPresentation: OperationalEquipmentPresentation
+  showEquipmentAttentionCount: boolean
   onOpenEquipmentDetail: (target: EquipmentDetailTarget) => void
   equipmentTabEnabled: boolean
   onOpenSites: () => void
@@ -933,6 +942,7 @@ export default function SiteOverviewPage({
   const site = getSite(siteId)
   const partner = getPartner(site.partnerId)
   const siteIndex = sites.findIndex((item) => item.id === siteId)
+  const attentionCount = equipmentAttentionCount({ siteId })
   return (
     <div className="min-h-full bg-white text-[#0a0a0a]">
       <header className="sticky top-0 z-10 flex h-14 items-center border-b border-[#e6e6e6] bg-white px-5">
@@ -1036,6 +1046,15 @@ export default function SiteOverviewPage({
             <button
               key={label}
               type="button"
+              onClick={() => {
+                if (label === "Incidents") {
+                  onOpenEquipmentTab()
+                  window.setTimeout(
+                    () => window.dispatchEvent(new Event("prototype:open-site-incidents")),
+                    0,
+                  )
+                }
+              }}
               className={`h-11 border-b-2 px-3 text-[14px] ${
                 label === "Overview"
                   ? "border-[#0a0a0a] font-medium text-[#0a0a0a]"
@@ -1049,9 +1068,14 @@ export default function SiteOverviewPage({
             <button
               type="button"
               onClick={onOpenEquipmentTab}
-              className="h-11 border-b-2 border-transparent px-3 text-[14px] text-[#525252] hover:text-[#0a0a0a]"
+              className="inline-flex h-11 items-center gap-1.5 border-b-2 border-transparent px-3 text-[14px] text-[#525252] hover:text-[#0a0a0a]"
             >
               Equipment
+              {showEquipmentAttentionCount && attentionCount > 0 && (
+                <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] leading-5 text-[#525252]">
+                  {attentionCount}
+                </span>
+              )}
             </button>
           )}
           <button
@@ -1065,21 +1089,23 @@ export default function SiteOverviewPage({
           <Details siteId={siteId} />
           <div className="min-w-0">
             <LiveUnits siteId={siteId} />
+            <Overview24Hours siteId={siteId} />
             {overviewEquipmentVisible && (
               <section className="mt-10">
                 <h2 className="mb-4 text-[16px] font-medium leading-6">
-                  Equipment
+                  {equipmentPresentation === "grouped"
+                    ? "Equipment to check"
+                    : "Equipment"}
                 </h2>
                 <OperationalEquipmentList
                   siteId={siteId}
                   onOpenDetail={onOpenEquipmentDetail}
-                  displayMode={overviewEquipmentView}
-                  onDisplayModeChange={() => {}}
-                  showDisplayModeControl={false}
+                  healthFilter={equipmentHealthFilter}
+                  onHealthFilterChange={onEquipmentHealthFilterChange}
+                  view={equipmentPresentation}
                 />
               </section>
             )}
-            <Overview24Hours siteId={siteId} />
             <ChargesTimeline siteId={siteId} />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import EquipmentTypeIcon from "@/EquipmentTypeIcon"
 import {
   equipmentDetailTargets,
@@ -12,18 +12,21 @@ type OperationalEquipmentListProps = {
   siteId?: string
   parent?: EquipmentDetailTarget
   onOpenDetail: (target: EquipmentDetailTarget) => void
-  onOpenEquipmentSection?: (
-    section: EquipmentSectionId,
-    system: { id: string kind: "unit" | "distributed" },
-  ) => void
-  displayMode: OperationalEquipmentView
-  onDisplayModeChange: (mode: OperationalEquipmentView) => void
-  showDisplayModeControl?: boolean
+  healthFilter: OperationalEquipmentHealthFilter
+  onHealthFilterChange: (filter: OperationalEquipmentHealthFilter) => void
+  view: OperationalEquipmentPresentation
 }
 
 export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer" | "fullTable"
+export type OperationalEquipmentHealthFilter =
+  | "offline"
+  | "critical"
+  | "warning"
+  | "normal"
+  | "all"
+export type OperationalEquipmentPresentation = "segment" | "grouped"
 
-type Health = "offline" | "critical" | "warning" | "normal"
+type Health = Exclude<OperationalEquipmentHealthFilter, "all">
 type OperationalRow = EquipmentDetailTarget & {
   health: Health
   incidents: number
@@ -62,7 +65,7 @@ function operationalState(
 
 function healthMeta(health: Health) {
   return {
-    offline: { label: "Offline", className: "bg-[#f05a55]", priority: 0 },
+    offline: { label: "Offline", className: "bg-[#8a8a8a]", priority: 0 },
     critical: { label: "Not ready", className: "bg-[#d5302a]", priority: 1 },
     warning: { label: "Attention", className: "bg-[#f4a51c]", priority: 2 },
     normal: { label: "Normal", className: "bg-[#1dcc6e]", priority: 3 },
@@ -75,6 +78,24 @@ function sortByHealth(rows: OperationalRow[]) {
       healthMeta(left.health).priority - healthMeta(right.health).priority ||
       left.id.localeCompare(right.id),
   )
+}
+
+export function equipmentAttentionCount({
+  siteId,
+  parent,
+}: {
+  siteId?: string
+  parent?: EquipmentDetailTarget
+} = {}) {
+  const site = siteId ? getSite(siteId) : undefined
+  return leafSections
+    .flatMap((section) => equipmentDetailTargets(section))
+    .filter((target) => !site || target.site === site.name)
+    .filter((target) => !parent || target.system === parent.id)
+    .filter((target) => {
+      const health = operationalState(target).health
+      return health === "critical" || health === "warning"
+    }).length
 }
 
 function IncidentValue({ row }: { row: OperationalRow }) {
@@ -1266,60 +1287,14 @@ function ExplorerView({
   )
 }
 
-function DisplayModeControl({
-  mode,
-  onChange,
-}: {
-  mode: OperationalEquipmentView
-  onChange: (mode: OperationalEquipmentView) => void
-}) {
-  return (
-    <div className="fixed bottom-5 right-20 z-30 pb-[env(safe-area-inset-bottom)]">
-      <div
-        role="group"
-        aria-label="Equipment display mode"
-        className="inline-flex h-10 items-center rounded-xl border border-[#e4e4e4] bg-[#f2f2f2] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]"
-      >
-        {(["table", "groups", "cards", "explorer", "fullTable"] as const).map(
-          (option) => (
-            <button
-              key={option}
-              type="button"
-              aria-pressed={mode === option}
-              onClick={() => onChange(option)}
-              className={`h-8 rounded-lg px-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
-                mode === option
-                  ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
-                  : "text-[#666] hover:text-[#171717]"
-              }`}
-            >
-              {option === "cards"
-                ? "Cards"
-                : option === "groups"
-                  ? "Groups"
-                  : option === "explorer"
-                    ? "Explorer"
-                    : option === "fullTable"
-                      ? "Full Table"
-                      : "Table"}
-            </button>
-          ),
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function OperationalEquipmentList({
   siteId,
   parent,
   onOpenDetail,
-  onOpenEquipmentSection,
-  displayMode,
-  onDisplayModeChange,
-  showDisplayModeControl = true,
+  healthFilter,
+  onHealthFilterChange,
+  view,
 }: OperationalEquipmentListProps) {
-  const [showNormal, setShowNormal] = useState(false)
   const rows = useMemo(() => {
     const site = siteId ? getSite(siteId) : undefined
     return leafSections
@@ -1329,105 +1304,101 @@ export default function OperationalEquipmentList({
       .map((target) => ({ ...target, ...operationalState(target) }))
   }, [siteId, parent?.id])
   const showSystem = !parent
-  const tableRows = rows
-  const tableProblems = tableRows
-    .filter((row) => row.health !== "normal")
-    .sort(
-      (left, right) =>
-        healthMeta(left.health).priority - healthMeta(right.health).priority ||
-        left.id.localeCompare(right.id),
-    )
-  const tableNormalGroups = tableRows
-    .filter((row) => row.health === "normal")
-    .reduce<Record<string, OperationalRow[]>>((groups, row) => {
-      const key = row.system ?? "Unassigned system"
-      groups[key] = [...(groups[key] ?? []), row]
-      return groups
-    }, {})
-  const tableNormalCount = tableRows.length - tableProblems.length
-  const openEquipmentSection = (
-    section: EquipmentSectionId,
-    system: { id: string kind: "unit" | "distributed" },
-  ) => {
-    if (onOpenEquipmentSection) {
-      onOpenEquipmentSection(section, system)
-      return
-    }
-    window.dispatchEvent(
-      new CustomEvent("prototype:open-equipment-section", {
-        detail: { section, system },
-      }),
-    )
-  }
+  const availableFilters = (["critical", "warning", "normal", "offline"] as const)
+    .filter((health) => rows.some((row) => row.health === health))
+  const activeFilter =
+    healthFilter === "all" || availableFilters.includes(healthFilter)
+      ? healthFilter
+      : "all"
+  const visibleRows =
+    activeFilter === "all"
+      ? sortByHealth(rows)
+      : rows
+          .filter((row) => row.health === activeFilter)
+          .sort((left, right) => left.id.localeCompare(right.id))
+  const healthGroups = (["offline", "critical", "warning", "normal"] as const)
+    .map((health) => ({
+      health,
+      rows: rows
+        .filter((row) => row.health === health)
+        .sort((left, right) => left.id.localeCompare(right.id)),
+    }))
+    .filter((group) => group.rows.length > 0)
 
+  useEffect(() => {
+    if (activeFilter !== healthFilter) onHealthFilterChange(activeFilter)
+  }, [activeFilter, healthFilter, onHealthFilterChange])
   return (
-    <section className={showDisplayModeControl ? "w-full pb-16" : "w-full"}>
-      {displayMode === "fullTable" ? (
-        <FullTable rows={rows} onOpenDetail={onOpenDetail} />
-      ) : displayMode === "cards" ? (
-        <SystemCards
-          rows={rows}
-          parent={parent}
-          onOpenDetail={onOpenDetail}
-          onOpenSection={openEquipmentSection}
-        />
-      ) : displayMode === "groups" ? (
-        <GroupedEquipment
-          rows={rows}
-          showSystem={showSystem}
-          onOpenDetail={onOpenDetail}
-        />
-      ) : displayMode === "explorer" ? (
-        <ExplorerView rows={rows} parent={parent} onOpenDetail={onOpenDetail} />
-      ) : (
+    <section className="w-full">
+      {view === "segment" ? (
         <>
-          <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-medium text-[#171717]">Needs attention</h2>
-            <span className="inline-flex h-6 items-center rounded-md bg-[#f2f2f2] px-2 text-[13px] font-medium text-[#525252]">
-              {tableProblems.length}
-            </span>
-          </div>
-          <div className="mt-3">
-            {tableProblems.length ? (
-              <OperationalTable
-                rows={tableProblems}
-                showSystem={showSystem}
-                onOpenDetail={onOpenDetail}
-              />
-            ) : (
-              <div className="rounded-xl border border-[#e6e6e6] bg-white px-4 py-8 text-center text-sm text-[#757575]">
-                No equipment requires attention
-              </div>
-            )}
-          </div>
-          <section className="mt-5 overflow-hidden rounded-xl border border-[#e6e6e6] bg-white">
+          <div
+            role="group"
+            aria-label="Equipment health filter"
+            className="mb-4 inline-flex max-w-full flex-wrap rounded-md bg-[#f5f5f5] p-0.5"
+          >
+            {availableFilters.map((filter) => (
+              <button
+                key={filter}
+                type="button"
+                aria-pressed={activeFilter === filter}
+                onClick={() => onHealthFilterChange(filter)}
+                className={`h-8 rounded-md px-3 text-[14px] leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                  activeFilter === filter
+                    ? "bg-white font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                    : "text-[#525252] hover:text-[#0a0a0a]"
+                }`}
+              >
+                <span>{healthMeta(filter).label}</span>
+                <span className="ml-1 text-[#757575]">
+                  {rows.filter((row) => row.health === filter).length}
+                </span>
+              </button>
+            ))}
             <button
               type="button"
-              onClick={() => setShowNormal((value) => !value)}
-              aria-expanded={showNormal}
-              className="flex h-12 w-full items-center justify-between px-4 text-left font-medium transition-colors hover:bg-[#fafafa]"
+              aria-pressed={activeFilter === "all"}
+              onClick={() => onHealthFilterChange("all")}
+              className={`h-8 rounded-md px-3 text-[14px] leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                activeFilter === "all"
+                  ? "bg-white font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                  : "text-[#525252] hover:text-[#0a0a0a]"
+              }`}
             >
-              <span>
-                Operating normally{" "}
-                <span className="ml-1 text-[#757575]">{tableNormalCount}</span>
-              </span>
-              <Chevron open={showNormal} />
+              <span>All</span>
+              <span className="ml-1 text-[#757575]">{rows.length}</span>
             </button>
-            {showNormal && (
-              <div className="border-t border-[#e6e6e6] p-3">
+          </div>
+          <OperationalTable
+            rows={visibleRows}
+            showSystem={showSystem}
+            onOpenDetail={onOpenDetail}
+          />
+        </>
+      ) : (
+        <div className="space-y-5">
+          {healthGroups
+            .filter((group) => group.health !== "normal")
+            .map((group) => (
+            <section key={group.health}>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-[14px] font-medium leading-5 text-[#171717]">
+                  {healthMeta(group.health).label}
+                </h2>
+                <span className="inline-flex h-5 items-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] font-medium leading-4 text-[#525252]">
+                  {group.rows.length}
+                </span>
+              </div>
+              <div className="mt-3">
                 <OperationalTable
-                  rows={[]}
-                  groups={tableNormalGroups}
+                  rows={group.rows}
                   showSystem={showSystem}
                   onOpenDetail={onOpenDetail}
                 />
               </div>
-            )}
-          </section>
-        </>
-      )}
-      {showDisplayModeControl && (
-        <DisplayModeControl mode={displayMode} onChange={onDisplayModeChange} />
+            </section>
+            ))}
+        </div>
       )}
     </section>
   )
