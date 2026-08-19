@@ -1103,6 +1103,7 @@ export default function SiteOverviewPage({
                   healthFilter={equipmentHealthFilter}
                   onHealthFilterChange={onEquipmentHealthFilterChange}
                   view={equipmentPresentation}
+                  hideNormalWhenGrouped
                 />
               </section>
             )}

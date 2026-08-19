@@ -15,6 +15,7 @@ type OperationalEquipmentListProps = {
   healthFilter: OperationalEquipmentHealthFilter
   onHealthFilterChange: (filter: OperationalEquipmentHealthFilter) => void
   view: OperationalEquipmentPresentation
+  hideNormalWhenGrouped?: boolean
 }
 
 export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer" | "fullTable"
@@ -1294,6 +1295,7 @@ export default function OperationalEquipmentList({
   healthFilter,
   onHealthFilterChange,
   view,
+  hideNormalWhenGrouped = false,
 }: OperationalEquipmentListProps) {
   const rows = useMemo(() => {
     const site = siteId ? getSite(siteId) : undefined
@@ -1378,7 +1380,7 @@ export default function OperationalEquipmentList({
       ) : (
         <div className="space-y-5">
           {healthGroups
-            .filter((group) => group.health !== "normal")
+            .filter((group) => !hideNormalWhenGrouped || group.health !== "normal")
             .map((group) => (
             <section key={group.health}>
               <div className="flex flex-wrap items-center gap-2">

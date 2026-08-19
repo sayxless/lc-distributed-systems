@@ -51,6 +51,10 @@ function statusFor(target: EquipmentDetailTarget) {
   return { label: "Operational", icon: undefined }
 }
 
+function EntityIncidents() {
+  return <section className="mt-7"><h2 className="mb-4 font-medium">Incidents</h2><div className="overflow-x-auto rounded-xl border border-[#e6e6e6]"><table className="w-full min-w-[680px] text-left text-sm"><thead className="h-11 border-b border-[#e6e6e6] text-[13px] text-[#757575]"><tr><th className="px-4 font-normal">Incident ID</th><th className="px-4 font-normal">Severity</th><th className="px-4 font-normal">Incident</th><th className="px-4 font-normal">Period</th></tr></thead><tbody className="divide-y divide-[#e6e6e6]"><tr className="h-14"><td className="px-4 font-medium">2151147</td><td className="px-4"><span className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e5e5] px-2 py-1 text-[#f05a55]"><span>▮▮▮</span>High</span></td><td className="px-4">Connection instability</td><td className="px-4">Aug 19, 15:37</td></tr><tr className="h-14"><td className="px-4 font-medium">2151160</td><td className="px-4"><span className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e5e5] px-2 py-1 text-[#f4a51c]"><span>▮▮▮</span>Medium</span></td><td className="px-4">Temperature warning</td><td className="px-4">Aug 19, 15:35</td></tr></tbody></table></div></section>
+}
+
 function StatusBadge({ target }: { target: EquipmentDetailTarget }) {
   const state = statusFor(target)
   return (
@@ -414,7 +418,7 @@ export default function EquipmentDetailPage({
       : target.section === "units"
         ? "integrated units"
         : `${pageName.toLowerCase()}s`
-  const [activeTab, setActiveTab] = useState<"overview" | "equipment">(
+  const [activeTab, setActiveTab] = useState<"overview" | "equipment" | "incidents">(
     "overview",
   )
   const isOperationalParent = isUnit || target.section === "distributed"
@@ -498,7 +502,7 @@ export default function EquipmentDetailPage({
           >
             Overview
           </button>
-          <button className="py-3 text-[#5c5c5c]">Incidents</button>
+          <button type="button" onClick={() => setActiveTab("incidents")} className={`${activeTab === "incidents" ? "border-b-2 border-[#171717] font-medium" : "text-[#5c5c5c]"} py-3`}>Incidents</button>
               {isOperationalParent && (
                 <button
               type="button"
@@ -519,7 +523,7 @@ export default function EquipmentDetailPage({
           )}
           <button className="py-3 text-[#5c5c5c]">Settings</button>
         </nav>
-        {!isOperationalParent || activeTab === "overview" ? (
+        {activeTab === "incidents" ? <EntityIncidents /> : !isOperationalParent || activeTab === "overview" ? (
           <div className="mt-7 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(15rem,0.78fr)_minmax(0,1.75fr)]">
             <aside>
               <h2 className="font-medium">Details</h2>
