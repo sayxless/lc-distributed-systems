@@ -452,7 +452,7 @@ export default function App() {
   const [overviewEquipmentVisible, setOverviewEquipmentVisible] =
     useState(true)
   const [equipmentHealthFilter, setEquipmentHealthFilter] =
-    useState<OperationalEquipmentHealthFilter>("all")
+    useState<OperationalEquipmentHealthFilter>("critical")
   const [equipmentPresentation, setEquipmentPresentation] =
     useState<OperationalEquipmentPresentation>("segment")
   const [showEquipmentAttentionCount, setShowEquipmentAttentionCount] =

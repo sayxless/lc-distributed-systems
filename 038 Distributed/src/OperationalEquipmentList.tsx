@@ -1308,10 +1308,17 @@ export default function OperationalEquipmentList({
   const showSystem = !parent
   const availableFilters = (["critical", "warning", "normal", "offline"] as const)
     .filter((health) => rows.some((row) => row.health === health))
+  const defaultFilter = availableFilters.includes("critical")
+    ? "critical"
+    : availableFilters.includes("warning")
+      ? "warning"
+      : availableFilters.includes("offline")
+        ? "offline"
+        : "all"
   const activeFilter =
     healthFilter === "all" || availableFilters.includes(healthFilter)
       ? healthFilter
-      : "all"
+      : defaultFilter
   const visibleRows =
     activeFilter === "all"
       ? sortByHealth(rows)
@@ -1339,6 +1346,19 @@ export default function OperationalEquipmentList({
             aria-label="Equipment health filter"
             className="mb-4 inline-flex max-w-full flex-wrap rounded-md bg-[#f5f5f5] p-0.5"
           >
+            <button
+              type="button"
+              aria-pressed={activeFilter === "all"}
+              onClick={() => onHealthFilterChange("all")}
+              className={`h-8 rounded-md px-3 text-[14px] leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                activeFilter === "all"
+                  ? "bg-white font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                  : "text-[#525252] hover:text-[#0a0a0a]"
+              }`}
+            >
+              <span>All</span>
+              <span className="ml-1 text-[#757575]">{rows.length}</span>
+            </button>
             {availableFilters.map((filter) => (
               <button
                 key={filter}
@@ -1357,19 +1377,6 @@ export default function OperationalEquipmentList({
                 </span>
               </button>
             ))}
-            <button
-              type="button"
-              aria-pressed={activeFilter === "all"}
-              onClick={() => onHealthFilterChange("all")}
-              className={`h-8 rounded-md px-3 text-[14px] leading-5 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
-                activeFilter === "all"
-                  ? "bg-white font-medium text-[#0a0a0a] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
-                  : "text-[#525252] hover:text-[#0a0a0a]"
-              }`}
-            >
-              <span>All</span>
-              <span className="ml-1 text-[#757575]">{rows.length}</span>
-            </button>
           </div>
           <OperationalTable
             rows={visibleRows}
