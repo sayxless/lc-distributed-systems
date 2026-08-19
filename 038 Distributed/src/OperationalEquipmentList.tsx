@@ -89,18 +89,16 @@ function SystemLabel({ id }: { id: string }) {
 
 function EquipmentGroup({ rows, section, showSystem, onOpenDetail }: { rows: OperationalRow[]; section: EquipmentSectionId; showSystem: boolean; onOpenDetail: (target: EquipmentDetailTarget) => void }) {
   const [open, setOpen] = useState(false)
-  const worst = [...rows].sort((left, right) => healthMeta(left.health).priority - healthMeta(right.health).priority)[0]
   const attentionCount = rows.filter((row) => row.health !== "normal").length
   const headingId = `equipment-group-${section}-${rows[0]?.system ?? "all"}`
 
   return <section className="overflow-hidden rounded-xl border border-[#e6e6e6] bg-white">
-    <button type="button" aria-expanded={open} aria-controls={headingId} onClick={() => setOpen((value) => !value)} className="grid min-h-12 w-full grid-cols-[minmax(14rem,1fr)_minmax(8rem,0.65fr)_minmax(10rem,0.75fr)_auto] items-center gap-4 px-4 text-left transition-colors hover:bg-[#fafafa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2357d9]">
+    <button type="button" aria-expanded={open} aria-controls={headingId} onClick={() => setOpen((value) => !value)} className="grid min-h-12 w-full grid-cols-[minmax(14rem,1fr)_minmax(10rem,0.75fr)_auto] items-center gap-4 px-4 text-left transition-colors hover:bg-[#fafafa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2357d9]">
       <span className="inline-flex items-center gap-2 font-medium text-[#242424]"><EquipmentTypeIcon kind={section} />{pluralLabel(section)} <span className="text-[#757575]">{rows.length}</span></span>
-      <span><HealthBadge health={worst.health} /></span>
       <span className={`text-sm ${attentionCount ? "font-medium text-[#a24f00]" : "text-[#757575]"}`}>{attentionCount ? `${attentionCount} need attention` : "Operating normally"}</span>
       <Chevron open={open} />
     </button>
-    {open && <div id={headingId} className="border-t border-[#e6e6e6] p-3"><OperationalTable rows={rows} showSystem={showSystem} onOpenDetail={onOpenDetail} /></div>}
+    {open && <div id={headingId} className="border-t border-[#e6e6e6] p-3"><OperationalTable rows={rows} showSystem={false} onOpenDetail={onOpenDetail} /></div>}
   </section>
 }
 

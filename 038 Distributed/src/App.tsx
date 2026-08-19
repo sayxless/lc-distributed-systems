@@ -265,12 +265,12 @@ function GearIcon() {
 
 function PrototypeSettings({
   onOpenAllScreens,
-  equipmentEnabled,
-  onEquipmentEnabledChange,
+  operationalEquipmentView,
+  onOperationalEquipmentViewChange,
 }: {
   onOpenAllScreens: () => void
-  equipmentEnabled: boolean
-  onEquipmentEnabledChange: (enabled: boolean) => void
+  operationalEquipmentView: OperationalEquipmentView
+  onOperationalEquipmentViewChange: (view: OperationalEquipmentView) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -321,23 +321,21 @@ function PrototypeSettings({
           >
             All screens
           </button>
-          <div className="mt-1 flex min-h-10 items-center justify-between gap-3 rounded-lg px-3 py-1.5">
-            <span className="text-sm font-medium text-[#30353d]">
-              Site equipment
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={equipmentEnabled}
-              aria-label="Show site equipment on the site page"
-              onClick={() => onEquipmentEnabledChange(!equipmentEnabled)}
-              className={`relative h-6 w-10 shrink-0 rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${equipmentEnabled ? "bg-[#00c86b]" : "bg-[#bdbdbd]"}`}
-            >
-              <span
-                aria-hidden="true"
-                className={`absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.2)] transition-transform duration-150 ${equipmentEnabled ? "translate-x-4" : "translate-x-0"}`}
-              />
-            </button>
+          <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
+            <p className="text-sm font-medium text-[#30353d]">Equipment view</p>
+            <div role="group" aria-label="Equipment display mode" className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1">
+              {(["table", "groups", "cards", "explorer"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  aria-pressed={operationalEquipmentView === view}
+                  onClick={() => onOperationalEquipmentViewChange(view)}
+                  className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${operationalEquipmentView === view ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]" : "text-[#666] hover:text-[#171717]"}`}
+                >
+                  {view === "table" ? "Table" : view === "groups" ? "Groups" : view === "cards" ? "Cards" : "Explorer"}
+                </button>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -362,21 +360,13 @@ export default function App() {
   const [selectedSiteId, setSelectedSiteId] = useState(defaultSiteId)
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentDetailTarget | null>(null)
   const [equipmentDetailOrigin, setEquipmentDetailOrigin] = useState<EquipmentDetailOrigin | null>(null)
-  const [equipmentEnabled, setEquipmentEnabled] = useState(true)
   const [operationalEquipmentView, setOperationalEquipmentView] = useState<OperationalEquipmentView>("table")
   const [equipmentSystemFilter, setEquipmentSystemFilter] = useState<EquipmentSystemFilter | null>(null)
 
   useNavigation(screen, setScreen)
 
-  const equipmentOnOverview = equipmentEnabled
-  const equipmentTabEnabled = equipmentEnabled
-
-  function handleEquipmentEnabledChange(enabled: boolean) {
-    setEquipmentEnabled(enabled)
-    if (!enabled && screen === "siteEquipment") {
-      setScreen("siteOverview")
-    }
-  }
+  const equipmentOnOverview = true
+  const equipmentTabEnabled = true
 
   function changeSite(offset: -1 | 1) {
     const currentIndex = sites.findIndex((site) => site.id === selectedSiteId)
@@ -597,9 +587,9 @@ export default function App() {
       )}
 
       <PrototypeSettings
-        equipmentEnabled={equipmentEnabled}
-        onEquipmentEnabledChange={handleEquipmentEnabledChange}
         onOpenAllScreens={() => setScreen("home")}
+        operationalEquipmentView={operationalEquipmentView}
+        onOperationalEquipmentViewChange={setOperationalEquipmentView}
       />
     </div>
   )
