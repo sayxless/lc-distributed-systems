@@ -56,7 +56,7 @@ function IncidentSummary({ incidents }: { incidents: number }) {
 }
 
 function StateBadge({ label = "Available" }: { label?: string }) {
-  return <span className="inline-flex h-6 items-center gap-1.5 rounded-md border border-[#e6e6e6] bg-white px-2 text-[13px] leading-5 text-[#171717]"><span aria-hidden="true" className="size-2 rounded-full bg-[#1dcc6e]" />{label}</span>
+  return <span className="inline-flex h-6 w-fit max-w-full justify-self-start items-center gap-1.5 whitespace-nowrap rounded-md border border-[#e6e6e6] bg-white px-2 text-[13px] leading-5 text-[#171717]"><span aria-hidden="true" className="size-2 rounded-full bg-[#1dcc6e]" />{label}</span>
 }
 
 function ChargerBadge({ variant }: { variant: "charging" | "available" | "preparing" | "unavailable" }) {
