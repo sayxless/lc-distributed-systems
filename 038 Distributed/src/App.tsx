@@ -5,16 +5,23 @@ import Gensets from "@/imports/Gensets/index"
 import Bess from "@/imports/Bess/index"
 import ParallelingPanels from "@/imports/ParallelingPanels/index"
 import Chargers from "@/imports/Chargers-2/index"
-import SiteEquipment from "@/SiteEquipment"
+import SiteOperationalEquipmentPage from "@/SiteOperationalEquipmentPage"
 import ChargersSidebarItem from "@/ChargersSidebarItem"
 import SiteScreenWrapper from "@/SiteScreenWrapper"
 import PrototypeLauncher from "@/PrototypeLauncher"
 import { defaultSiteId, sites } from "@/prototypeData"
-import EquipmentPage, { equipmentDetailTargets, type EquipmentDetailTarget, type EquipmentSectionId } from "@/EquipmentPage"
+import EquipmentPage, { equipmentDetailTargets, type EquipmentDetailTarget, type EquipmentSectionId, type EquipmentSystemFilter } from "@/EquipmentPage"
 import EquipmentDetailPage from "@/EquipmentDetailPage"
 import SiteOverviewPage from "@/SiteOverviewPage"
+import type { OperationalEquipmentView } from "@/OperationalEquipmentList"
 
 type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail"
+
+type EquipmentDetailOrigin = {
+  screen: Exclude<Screen, "equipmentDetail">
+  siteId: string
+  systemFilter: EquipmentSystemFilter | null
+}
 
 // ─── Sidebar click-target Y coordinates ────────────────────────────────────
 //
@@ -354,7 +361,10 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("site")
   const [selectedSiteId, setSelectedSiteId] = useState(defaultSiteId)
   const [selectedEquipment, setSelectedEquipment] = useState<EquipmentDetailTarget | null>(null)
+  const [equipmentDetailOrigin, setEquipmentDetailOrigin] = useState<EquipmentDetailOrigin | null>(null)
   const [equipmentEnabled, setEquipmentEnabled] = useState(true)
+  const [operationalEquipmentView, setOperationalEquipmentView] = useState<OperationalEquipmentView>("table")
+  const [equipmentSystemFilter, setEquipmentSystemFilter] = useState<EquipmentSystemFilter | null>(null)
 
   useNavigation(screen, setScreen)
 
@@ -400,6 +410,44 @@ export default function App() {
     setSelectedEquipment(detailTargets[nextIndex])
   }
 
+  function openEquipmentDetail(target: EquipmentDetailTarget) {
+    if (screen !== "equipmentDetail") {
+      setEquipmentDetailOrigin({
+        screen,
+        siteId: selectedSiteId,
+        systemFilter: equipmentSystemFilter,
+      })
+    }
+    setSelectedEquipment(target)
+    setScreen("equipmentDetail")
+  }
+
+  function openEquipmentSection(section: EquipmentSectionId, system: EquipmentSystemFilter) {
+    setEquipmentSystemFilter(system)
+    setScreen(
+      section === "units"
+        ? "units"
+        : section === "distributed"
+          ? "distributed"
+          : section === "chargers"
+            ? "chargers"
+            : section === "gensets"
+              ? "gensets"
+              : section === "bess"
+                ? "bess"
+                : "paralleling",
+    )
+  }
+
+  useEffect(() => {
+    const handleOpenEquipmentSection = (event: Event) => {
+      const detail = (event as CustomEvent<{ section: EquipmentSectionId; system: EquipmentSystemFilter }>).detail
+      if (detail) openEquipmentSection(detail.section, detail.system)
+    }
+    window.addEventListener("prototype:open-equipment-section", handleOpenEquipmentSection)
+    return () => window.removeEventListener("prototype:open-equipment-section", handleOpenEquipmentSection)
+  }, [])
+
   return (
     <div
       className="w-screen h-screen relative overflow-hidden"
@@ -411,6 +459,7 @@ export default function App() {
           <EquipmentPage
             activeSection={equipmentSection}
             onNavigate={(section) => {
+              setEquipmentSystemFilter(null)
               setScreen(
                 section === "units"
                   ? "units"
@@ -425,22 +474,32 @@ export default function App() {
                           : "paralleling",
               )
             }}
+            systemFilter={equipmentSystemFilter}
+            onClearSystemFilter={() => setEquipmentSystemFilter(null)}
             onOpenSites={() => setScreen("site")}
-            onOpenDetail={(target) => {
-              setSelectedEquipment(target)
-              setScreen("equipmentDetail")
-            }}
+            onOpenDetail={openEquipmentDetail}
           />
         )}
         {screen === "equipmentDetail" && selectedEquipment && (
           <EquipmentDetailPage
             target={selectedEquipment}
             onOpenSites={() => setScreen("site")}
+            onOpenDetail={(target) => setSelectedEquipment(target)}
             position={selectedEquipmentIndex + 1}
             total={detailTargets.length}
             onPrevious={() => changeEquipment(-1)}
             onNext={() => changeEquipment(1)}
+            operationalEquipmentView={operationalEquipmentView}
+            onOperationalEquipmentViewChange={setOperationalEquipmentView}
+            onOpenEquipmentSection={openEquipmentSection}
             onBack={() => {
+              if (equipmentDetailOrigin) {
+                setSelectedSiteId(equipmentDetailOrigin.siteId)
+                setEquipmentSystemFilter(equipmentDetailOrigin.systemFilter)
+                setScreen(equipmentDetailOrigin.screen)
+                setEquipmentDetailOrigin(null)
+                return
+              }
               setScreen(
                 selectedEquipment.section === "units"
                   ? "units"
@@ -510,7 +569,17 @@ export default function App() {
         )}
         {screen === "siteEquipment" && (
           <div className="site-overview-screen absolute inset-0">
-            <SiteEquipment equipmentTabEnabled={equipmentTabEnabled} />
+            <SiteOperationalEquipmentPage
+              siteId={selectedSiteId}
+              onOpenSites={() => setScreen("site")}
+              onOpenOverview={() => setScreen("siteOverview")}
+              onPreviousSite={() => changeSite(-1)}
+              onNextSite={() => changeSite(1)}
+              onOpenDetail={openEquipmentDetail}
+              operationalEquipmentView={operationalEquipmentView}
+              onOperationalEquipmentViewChange={setOperationalEquipmentView}
+              onOpenEquipmentSection={openEquipmentSection}
+            />
           </div>
         )}
       </div>

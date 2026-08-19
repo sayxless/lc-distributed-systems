@@ -192,3 +192,13 @@
   font-style: normal;
   font-weight: 400;
 }
+
+/* Equipment-detail section headings use the same 16/24 hierarchy as the
+   operational equipment views, without affecting the smaller table labels. */
+nav[aria-label="Equipment detail tabs"] + div > section.min-w-0 > h2,
+nav[aria-label="Equipment detail tabs"] + div > section.min-w-0 > section > h2,
+nav[aria-label="Equipment detail tabs"] + div > section.min-w-0 > section > div > h2 {
+  font-family: "Inter Variable", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 24px;
+}
