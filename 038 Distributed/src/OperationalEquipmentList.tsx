@@ -46,6 +46,12 @@ function healthMeta(health: Health) {
   }[health]
 }
 
+function sortByHealth(rows: OperationalRow[]) {
+  return [...rows].sort((left, right) =>
+    healthMeta(left.health).priority - healthMeta(right.health).priority || left.id.localeCompare(right.id),
+  )
+}
+
 function IncidentValue({ row }: { row: OperationalRow }) {
   if (!row.incidents) return <span className="text-[#757575]">—</span>
   const critical = row.health === "critical"
@@ -98,7 +104,7 @@ function EquipmentGroup({ rows, section, showSystem, onOpenDetail }: { rows: Ope
       <span className={`text-sm ${attentionCount ? "font-medium text-[#a24f00]" : "text-[#757575]"}`}>{attentionCount ? `${attentionCount} need attention` : "Operating normally"}</span>
       <Chevron open={open} />
     </button>
-    {open && <div id={headingId} className="border-t border-[#e6e6e6] p-3"><OperationalTable rows={rows} showSystem={false} onOpenDetail={onOpenDetail} /></div>}
+    {open && <div id={headingId} className="border-t border-[#e6e6e6] p-3"><OperationalTable rows={sortByHealth(rows)} showSystem={false} onOpenDetail={onOpenDetail} /></div>}
   </section>
 }
 
