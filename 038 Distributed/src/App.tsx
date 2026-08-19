@@ -324,7 +324,7 @@ function PrototypeSettings({
           <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
             <p className="text-sm font-medium text-[#30353d]">Equipment view</p>
             <div role="group" aria-label="Equipment display mode" className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1">
-              {(["table", "groups", "cards", "explorer"] as const).map((view) => (
+              {(["table", "groups", "cards", "explorer", "fullTable"] as const).map((view) => (
                 <button
                   key={view}
                   type="button"
@@ -332,7 +332,7 @@ function PrototypeSettings({
                   onClick={() => onOperationalEquipmentViewChange(view)}
                   className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${operationalEquipmentView === view ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]" : "text-[#666] hover:text-[#171717]"}`}
                 >
-                  {view === "table" ? "Table" : view === "groups" ? "Groups" : view === "cards" ? "Cards" : "Explorer"}
+                  {view === "table" ? "Table" : view === "groups" ? "Groups" : view === "cards" ? "Cards" : view === "fullTable" ? "Full Table" : "Explorer"}
                 </button>
               ))}
             </div>

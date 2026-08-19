@@ -6,13 +6,15 @@ export type EquipmentKind =
   | "chargers"
   | "units"
 
+const iconBase = `${import.meta.env.BASE_URL}icons/`
+
 const sources: Record<EquipmentKind, string> = {
-  distributed: "/icons/distributed-system.svg",
-  paralleling: "/icons/paralleling-panel.svg",
-  bess: "/icons/bess.svg",
-  gensets: "/icons/genset.svg",
-  chargers: "/icons/charger.svg",
-  units: "/icons/integrated-unit.svg",
+  distributed: `${iconBase}distributed-system.svg`,
+  paralleling: `${iconBase}paralleling-panel.svg`,
+  bess: `${iconBase}bess.svg`,
+  gensets: `${iconBase}genset.svg`,
+  chargers: `${iconBase}charger.svg`,
+  units: `${iconBase}integrated-unit.svg`,
 }
 
 export default function EquipmentTypeIcon({ kind }: { kind: EquipmentKind }) {

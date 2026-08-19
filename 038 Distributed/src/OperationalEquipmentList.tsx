@@ -13,7 +13,7 @@ type OperationalEquipmentListProps = {
   onDisplayModeChange: (mode: OperationalEquipmentView) => void
 }
 
-export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer"
+export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer" | "fullTable"
 
 type Health = "offline" | "critical" | "warning" | "normal"
 type OperationalRow = EquipmentDetailTarget & {
@@ -113,6 +113,49 @@ function GroupedEquipment({ rows, showSystem, onOpenDetail }: { rows: Operationa
     const sectionRows = systemRows.filter((row) => row.section === section)
     return sectionRows.length ? <EquipmentGroup key={section} rows={sectionRows} section={section} showSystem={showSystem} onOpenDetail={onOpenDetail} /> : null
   })}</div></section>)}</div>
+}
+
+function RootTableStatus({ row, section }: { row: OperationalRow; section: EquipmentSectionId }) {
+  if (section === "chargers") {
+    const charging = row.health === "warning" || (row.health === "normal" && hash(row.id) % 3 === 0)
+    const label = row.health === "offline" ? "Unavailable" : row.health === "critical" ? "Preparing" : charging ? `Charging · ${42 + (hash(row.id) % 39)}%` : "Available"
+    const icon = row.health === "offline" ? "unavailable" : row.health === "critical" ? "preparing" : charging ? "charging" : "available"
+    return <span className="inline-flex h-7 items-center gap-1.5 whitespace-nowrap rounded-md border border-[#e5e5e5] bg-white px-2 text-[13px] text-[#242424]"><StatusIcon name={icon} className="size-4" />{label}</span>
+  }
+
+  const label = row.health === "offline" ? "Unknown" : row.health === "critical" ? "Not ready" : row.health === "warning" ? (section === "bess" ? "Charging" : "Ready to start") : section === "paralleling" ? "Operational" : section === "bess" ? "Discharging" : "Running"
+  const dot = row.health === "offline" ? "bg-[#a7a7a7]" : row.health === "critical" ? "bg-[#f05a55]" : row.health === "warning" ? "bg-[#f4a51c]" : "bg-[#1dcc6e]"
+  return <span className="inline-flex h-7 items-center gap-2 whitespace-nowrap rounded-md border border-[#e5e5e5] bg-white px-2 text-[13px] text-[#242424]"><i className={`size-2 rounded-full ${dot}`} />{label}</span>
+}
+
+function MiniProgress({ value, tone = "green" }: { value: number; tone?: "green" | "amber" }) {
+  return <span className="inline-flex items-center gap-2 whitespace-nowrap"><span className="h-1.5 w-12 overflow-hidden rounded-full bg-[#e6e6e6]"><i className={`block h-full rounded-full ${tone === "amber" ? "bg-[#f4a51c]" : "bg-[#1dcc6e]"}`} style={{ width: `${value}%` }} /></span>{value}%</span>
+}
+
+function RootTableHeading({ section, count }: { section: EquipmentSectionId; count: number }) {
+  return <div className="flex items-center gap-2"><EquipmentTypeIcon kind={section} /><h2 className="text-base font-medium text-[#171717]">{pluralLabel(section)}</h2><span className="text-sm text-[#757575]">{count}</span></div>
+}
+
+function FullTable({ rows, onOpenDetail }: { rows: OperationalRow[]; onOpenDetail: (target: EquipmentDetailTarget) => void }) {
+  const open = (row: OperationalRow) => onOpenDetail(row)
+  const sectionRows = (section: EquipmentSectionId) => rows.filter((row) => row.section === section).sort((left, right) => healthMeta(left.health).priority - healthMeta(right.health).priority || left.id.localeCompare(right.id))
+  const rowClass = "h-12 cursor-pointer transition-colors hover:bg-[#fafafa] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#2357d9]"
+  const idCell = (row: OperationalRow) => <td className="px-4"><button type="button" onClick={(event) => { event.stopPropagation(); open(row) }} className="font-medium text-[#171717] hover:underline">{row.id}</button></td>
+
+  const chargers = sectionRows("chargers")
+  const gensets = sectionRows("gensets")
+  const bess = sectionRows("bess")
+  const panels = sectionRows("paralleling")
+
+  return <div className="space-y-8">
+    {chargers.length > 0 && <section className="space-y-3"><RootTableHeading section="chargers" count={chargers.length} /><div className="overflow-x-auto rounded-xl border border-[#e6e6e6] bg-white"><table className="w-full min-w-[760px] border-collapse text-left text-sm"><thead className="h-11 border-b border-[#e6e6e6] text-[13px] font-normal text-[#757575]"><tr><th className="px-4 font-normal">Charger ID</th><th className="px-4 font-normal">Status</th><th className="px-4 font-normal">Current power</th><th className="px-4 font-normal">Incidents now</th><th className="px-4 font-normal">Connection</th></tr></thead><tbody className="divide-y divide-[#e6e6e6]">{chargers.map((row) => <tr key={row.id} tabIndex={0} onClick={() => open(row)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(row) } }} className={rowClass}>{idCell(row)}<td className="px-4"><RootTableStatus row={row} section="chargers" /></td><td className="px-4 text-[#454545]">{row.health === "offline" ? "—" : `${80 + (hash(row.id) % 81)} kW`}</td><td className="px-4"><IncidentValue row={row} /></td><td className="px-4"><ConnectionBadge connection={row.connection} /></td></tr>)}</tbody></table></div></section>}
+
+    {gensets.length > 0 && <section className="space-y-3"><RootTableHeading section="gensets" count={gensets.length} /><div className="overflow-x-auto rounded-xl border border-[#e6e6e6] bg-white"><table className="w-full min-w-[940px] border-collapse text-left text-sm"><thead className="h-11 border-b border-[#e6e6e6] text-[13px] font-normal text-[#757575]"><tr><th className="px-4 font-normal">Genset ID</th><th className="px-4 font-normal">Mode</th><th className="px-4 font-normal">Power</th><th className="px-4 font-normal">Load</th><th className="px-4 font-normal">Service in</th><th className="px-4 font-normal">Incidents</th><th className="px-4 font-normal">Connection</th></tr></thead><tbody className="divide-y divide-[#e6e6e6]">{gensets.map((row) => { const value = 24 + (hash(row.id) % 64); return <tr key={row.id} tabIndex={0} onClick={() => open(row)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(row) } }} className={rowClass}>{idCell(row)}<td className="px-4"><RootTableStatus row={row} section="gensets" /></td><td className="px-4 text-[#454545]">{row.health === "offline" ? "—" : `${100 + (hash(row.id) % 181)} kW`}</td><td className="px-4"><MiniProgress value={value} /></td><td className="px-4 text-[#454545]">{36 + (hash(row.id) % 320)} h</td><td className="px-4"><IncidentValue row={row} /></td><td className="px-4"><ConnectionBadge connection={row.connection} /></td></tr> })}</tbody></table></div></section>}
+
+    {bess.length > 0 && <section className="space-y-3"><RootTableHeading section="bess" count={bess.length} /><div className="overflow-x-auto rounded-xl border border-[#e6e6e6] bg-white"><table className="w-full min-w-[1060px] border-collapse text-left text-sm"><thead className="h-11 border-b border-[#e6e6e6] text-[13px] font-normal text-[#757575]"><tr><th className="px-4 font-normal">BESS ID</th><th className="px-4 font-normal">Mode</th><th className="px-4 font-normal">State of charge</th><th className="px-4 font-normal">Runtime left</th><th className="px-4 font-normal">Power</th><th className="px-4 font-normal">Battery health</th><th className="px-4 font-normal">Incidents</th><th className="px-4 font-normal">Connection</th></tr></thead><tbody className="divide-y divide-[#e6e6e6]">{bess.map((row) => { const soc = 18 + (hash(row.id) % 78); return <tr key={row.id} tabIndex={0} onClick={() => open(row)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(row) } }} className={rowClass}>{idCell(row)}<td className="px-4"><RootTableStatus row={row} section="bess" /></td><td className="px-4"><MiniProgress value={soc} tone={soc > 82 ? "amber" : "green"} /></td><td className="px-4 text-[#454545]">{row.health === "offline" ? "—" : `${1 + (hash(row.id) % 5)} h ${10 + (hash(row.id) % 50)} m`}</td><td className="px-4 text-[#454545]">{row.health === "offline" ? "—" : `${row.health === "warning" ? "−" : "+"}${80 + (hash(row.id) % 121)} kW`}</td><td className="px-4 text-[#454545]">{79 + (hash(row.id) % 20)}%</td><td className="px-4"><IncidentValue row={row} /></td><td className="px-4"><ConnectionBadge connection={row.connection} /></td></tr> })}</tbody></table></div></section>}
+
+    {panels.length > 0 && <section className="space-y-3"><RootTableHeading section="paralleling" count={panels.length} /><div className="overflow-x-auto rounded-xl border border-[#e6e6e6] bg-white"><table className="w-full min-w-[1040px] border-collapse text-left text-sm"><thead className="h-11 border-b border-[#e6e6e6] text-[13px] font-normal text-[#757575]"><tr><th className="px-4 font-normal">Panel ID</th><th className="px-4 font-normal">Status</th><th className="px-4 font-normal">Control</th><th className="px-4 font-normal">Breaker wear</th><th className="px-4 font-normal">Max temp</th><th className="px-4 font-normal">Service in</th><th className="px-4 font-normal">Incidents</th><th className="px-4 font-normal">Connection</th></tr></thead><tbody className="divide-y divide-[#e6e6e6]">{panels.map((row) => { const wear = 24 + (hash(row.id) % 70); return <tr key={row.id} tabIndex={0} onClick={() => open(row)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(row) } }} className={rowClass}>{idCell(row)}<td className="px-4"><RootTableStatus row={row} section="paralleling" /></td><td className="px-4 text-[#454545]">{hash(row.id) % 2 ? "Auto" : "Manual"}</td><td className="px-4"><MiniProgress value={wear} tone={wear > 80 ? "amber" : "green"} /></td><td className="px-4 text-[#454545]">{58 + (hash(row.id) % 28)} °C</td><td className="px-4 text-[#454545]">{12 + (hash(row.id) % 210)} d</td><td className="px-4"><IncidentValue row={row} /></td><td className="px-4"><ConnectionBadge connection={row.connection} /></td></tr> })}</tbody></table></div></section>}
+  </div>
 }
 
 function CardTone({ health }: { health: Health }) {
@@ -215,7 +258,7 @@ function ExplorerView({ rows, parent, onOpenDetail }: { rows: OperationalRow[]; 
 }
 
 function DisplayModeControl({ mode, onChange }: { mode: OperationalEquipmentView; onChange: (mode: OperationalEquipmentView) => void }) {
-  return <div className="fixed bottom-5 right-20 z-30 pb-[env(safe-area-inset-bottom)]"><div role="group" aria-label="Equipment display mode" className="inline-flex h-10 items-center rounded-xl border border-[#e4e4e4] bg-[#f2f2f2] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">{(["table", "groups", "cards", "explorer"] as const).map((option) => <button key={option} type="button" aria-pressed={mode === option} onClick={() => onChange(option)} className={`h-8 rounded-lg px-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${mode === option ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]" : "text-[#666] hover:text-[#171717]"}`}>{option === "cards" ? "Cards" : option === "groups" ? "Groups" : option === "explorer" ? "Explorer" : "Table"}</button>)}</div></div>
+  return <div className="fixed bottom-5 right-20 z-30 pb-[env(safe-area-inset-bottom)]"><div role="group" aria-label="Equipment display mode" className="inline-flex h-10 items-center rounded-xl border border-[#e4e4e4] bg-[#f2f2f2] p-1 shadow-[0_8px_24px_rgba(0,0,0,0.12)]">{(["table", "groups", "cards", "explorer", "fullTable"] as const).map((option) => <button key={option} type="button" aria-pressed={mode === option} onClick={() => onChange(option)} className={`h-8 rounded-lg px-3 text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${mode === option ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]" : "text-[#666] hover:text-[#171717]"}`}>{option === "cards" ? "Cards" : option === "groups" ? "Groups" : option === "explorer" ? "Explorer" : option === "fullTable" ? "Full Table" : "Table"}</button>)}</div></div>
 }
 
 export default function OperationalEquipmentList({ siteId, parent, onOpenDetail, onOpenEquipmentSection, displayMode, onDisplayModeChange }: OperationalEquipmentListProps) {
@@ -245,7 +288,8 @@ export default function OperationalEquipmentList({ siteId, parent, onOpenDetail,
   }
 
   return <section className="w-full pb-16">
-    {displayMode === "cards" ? <SystemCards rows={rows} parent={parent} onOpenDetail={onOpenDetail} onOpenSection={openEquipmentSection} />
+    {displayMode === "fullTable" ? <FullTable rows={rows} onOpenDetail={onOpenDetail} />
+      : displayMode === "cards" ? <SystemCards rows={rows} parent={parent} onOpenDetail={onOpenDetail} onOpenSection={openEquipmentSection} />
       : displayMode === "groups" ? <GroupedEquipment rows={rows} showSystem={showSystem} onOpenDetail={onOpenDetail} />
         : displayMode === "explorer" ? <ExplorerView rows={rows} parent={parent} onOpenDetail={onOpenDetail} />
           : <>

@@ -11,18 +11,20 @@ export type StatusIconName =
   | "offline"
   | "site"
 
+const iconBase = `${import.meta.env.BASE_URL}icons/`
+
 const sources: Record<StatusIconName, string> = {
-  available: "/icons/ic_available.svg",
-  charging: "/icons/ic_charging.svg",
-  charged: "/icons/ic_charged.svg",
-  preparing: "/icons/ic_preparing.svg",
-  unavailable: "/icons/ic_unavailable.svg",
-  faulted: "/icons/ic_faulted.svg",
-  aborted: "/icons/ic_aborted.svg",
-  "not-started": "/icons/ic_not_started.svg",
-  online: "/icons/ic_online.svg",
-  offline: "/icons/ic_ofline.svg",
-  site: "/icons/ic_site.svg",
+  available: `${iconBase}ic_available.svg`,
+  charging: `${iconBase}ic_charging.svg`,
+  charged: `${iconBase}ic_charged.svg`,
+  preparing: `${iconBase}ic_preparing.svg`,
+  unavailable: `${iconBase}ic_unavailable.svg`,
+  faulted: `${iconBase}ic_faulted.svg`,
+  aborted: `${iconBase}ic_aborted.svg`,
+  "not-started": `${iconBase}ic_not_started.svg`,
+  online: `${iconBase}ic_online.svg`,
+  offline: `${iconBase}ic_ofline.svg`,
+  site: `${iconBase}ic_site.svg`,
 }
 
 export default function StatusIcon({ name, className = "size-5" }: { name: StatusIconName; className?: string }) {
