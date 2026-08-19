@@ -10,10 +10,20 @@ import ChargersSidebarItem from "@/ChargersSidebarItem"
 import SiteScreenWrapper from "@/SiteScreenWrapper"
 import PrototypeLauncher from "@/PrototypeLauncher"
 import { defaultSiteId, sites } from "@/prototypeData"
-import EquipmentPage, { equipmentDetailTargets, type EquipmentDetailTarget, type EquipmentSectionId, type EquipmentSystemFilter } from "@/EquipmentPage"
+import EquipmentPage, {
+  equipmentDetailTargets,
+  type EquipmentDetailTarget,
+  type EquipmentSectionId,
+  type EquipmentSystemFilter,
+} from "@/EquipmentPage"
 import EquipmentDetailPage from "@/EquipmentDetailPage"
 import SiteOverviewPage from "@/SiteOverviewPage"
 import type { OperationalEquipmentView } from "@/OperationalEquipmentList"
+
+type OverviewEquipmentView = Extract<
+  OperationalEquipmentView,
+  "table" | "groups" | "cards"
+>
 
 type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail"
 
@@ -267,10 +277,18 @@ function PrototypeSettings({
   onOpenAllScreens,
   operationalEquipmentView,
   onOperationalEquipmentViewChange,
+  overviewEquipmentVisible,
+  onOverviewEquipmentVisibleChange,
+  overviewEquipmentView,
+  onOverviewEquipmentViewChange,
 }: {
   onOpenAllScreens: () => void
   operationalEquipmentView: OperationalEquipmentView
   onOperationalEquipmentViewChange: (view: OperationalEquipmentView) => void
+  overviewEquipmentVisible: boolean
+  onOverviewEquipmentVisibleChange: (visible: boolean) => void
+  overviewEquipmentView: OverviewEquipmentView
+  onOverviewEquipmentViewChange: (view: OverviewEquipmentView) => void
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -309,7 +327,7 @@ function PrototypeSettings({
         <section
           id="prototype-settings-menu"
           aria-label="Prototype settings"
-          className="w-56 rounded-xl bg-white p-1.5 shadow-[0_12px_28px_rgba(16,24,40,0.18),0_2px_6px_rgba(16,24,40,0.08)] ring-1 ring-black/10"
+          className="w-64 rounded-xl bg-white p-1.5 shadow-[0_12px_28px_rgba(16,24,40,0.18),0_2px_6px_rgba(16,24,40,0.08)] ring-1 ring-black/10"
         >
           <button
             type="button"
@@ -323,16 +341,93 @@ function PrototypeSettings({
           </button>
           <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
             <p className="text-sm font-medium text-[#30353d]">Equipment view</p>
-            <div role="group" aria-label="Equipment display mode" className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1">
-              {(["table", "groups", "cards", "explorer", "fullTable"] as const).map((view) => (
+            <div
+              role="group"
+              aria-label="Equipment display mode"
+              className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1"
+            >
+              {([
+                "table",
+                "groups",
+                "cards",
+                "explorer",
+                "fullTable",
+              ] as const).map((view) => (
                 <button
                   key={view}
                   type="button"
                   aria-pressed={operationalEquipmentView === view}
                   onClick={() => onOperationalEquipmentViewChange(view)}
-                  className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${operationalEquipmentView === view ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]" : "text-[#666] hover:text-[#171717]"}`}
+                  className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                    operationalEquipmentView === view
+                      ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                      : "text-[#666] hover:text-[#171717]"
+                  }`}
                 >
-                  {view === "table" ? "Table" : view === "groups" ? "Groups" : view === "cards" ? "Cards" : view === "fullTable" ? "Full Table" : "Explorer"}
+                  {view === "table"
+                    ? "Table"
+                    : view === "groups"
+                      ? "Groups"
+                      : view === "cards"
+                        ? "Cards"
+                        : view === "fullTable"
+                          ? "Full Table"
+                          : "Explorer"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-[#30353d]">
+                Overview equipment
+              </p>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={overviewEquipmentVisible}
+                aria-label="Show equipment on overview"
+                onClick={() =>
+                  onOverviewEquipmentVisibleChange(!overviewEquipmentVisible)
+                }
+                className={`relative h-6 w-10 rounded-full transition-colors duration-150 ${
+                  overviewEquipmentVisible ? "bg-[#1dcc6e]" : "bg-[#c9c9c9]"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-transform duration-150 ${
+                    overviewEquipmentVisible
+                      ? "translate-x-4"
+                      : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+            <div
+              role="group"
+              aria-label="Overview equipment display mode"
+              className={`mt-2 grid grid-cols-3 rounded-lg bg-[#f2f2f2] p-1 ${
+                overviewEquipmentVisible ? "" : "opacity-50"
+              }`}
+            >
+              {(["table", "groups", "cards"] as const).map((view) => (
+                <button
+                  key={view}
+                  type="button"
+                  disabled={!overviewEquipmentVisible}
+                  aria-pressed={overviewEquipmentView === view}
+                  onClick={() => onOverviewEquipmentViewChange(view)}
+                  className={`h-8 rounded-md px-1 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] disabled:cursor-not-allowed ${
+                    overviewEquipmentView === view
+                      ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                      : "text-[#666] hover:text-[#171717]"
+                  }`}
+                >
+                  {view === "table"
+                    ? "Table"
+                    : view === "groups"
+                      ? "Groups"
+                      : "Cards"}
                 </button>
               ))}
             </div>
@@ -358,14 +453,21 @@ function PrototypeSettings({
 export default function App() {
   const [screen, setScreen] = useState<Screen>("site")
   const [selectedSiteId, setSelectedSiteId] = useState(defaultSiteId)
-  const [selectedEquipment, setSelectedEquipment] = useState<EquipmentDetailTarget | null>(null)
-  const [equipmentDetailOrigin, setEquipmentDetailOrigin] = useState<EquipmentDetailOrigin | null>(null)
-  const [operationalEquipmentView, setOperationalEquipmentView] = useState<OperationalEquipmentView>("table")
-  const [equipmentSystemFilter, setEquipmentSystemFilter] = useState<EquipmentSystemFilter | null>(null)
+  const [selectedEquipment, setSelectedEquipment] =
+    useState<EquipmentDetailTarget | null>(null)
+  const [equipmentDetailOrigin, setEquipmentDetailOrigin] =
+    useState<EquipmentDetailOrigin | null>(null)
+  const [operationalEquipmentView, setOperationalEquipmentView] =
+    useState<OperationalEquipmentView>("table")
+  const [overviewEquipmentVisible, setOverviewEquipmentVisible] =
+    useState(true)
+  const [overviewEquipmentView, setOverviewEquipmentView] =
+    useState<OverviewEquipmentView>("table")
+  const [equipmentSystemFilter, setEquipmentSystemFilter] =
+    useState<EquipmentSystemFilter | null>(null)
 
   useNavigation(screen, setScreen)
 
-  const equipmentOnOverview = true
   const equipmentTabEnabled = true
 
   function changeSite(offset: -1 | 1) {
@@ -380,23 +482,37 @@ export default function App() {
     screen === "siteOverviewCards" ||
     screen === "siteEquipment"
   const hasSidebar = false
-  const equipmentSectionByScreen: Partial<Record<Screen, EquipmentSectionId>> = {
-    units: "units",
-    distributed: "distributed",
-    chargers: "chargers",
-    gensets: "gensets",
-    bess: "bess",
-    paralleling: "paralleling",
-  }
+  const equipmentSectionByScreen: Partial<Record<Screen, EquipmentSectionId>> =
+    {
+      units: "units",
+      distributed: "distributed",
+      chargers: "chargers",
+      gensets: "gensets",
+      bess: "bess",
+      paralleling: "paralleling",
+    }
   const equipmentSection = equipmentSectionByScreen[screen]
-  const detailTargets = selectedEquipment ? equipmentDetailTargets(selectedEquipment.section) : []
+  const detailTargets = selectedEquipment
+    ? equipmentDetailTargets(selectedEquipment.section)
+    : []
   const selectedEquipmentIndex = selectedEquipment
-    ? Math.max(0, detailTargets.findIndex((target) => target.id === selectedEquipment.id && target.partnerId === selectedEquipment.partnerId && target.site === selectedEquipment.site && target.system === selectedEquipment.system))
+    ? Math.max(
+        0,
+        detailTargets.findIndex(
+          (target) =>
+            target.id === selectedEquipment.id &&
+            target.partnerId === selectedEquipment.partnerId &&
+            target.site === selectedEquipment.site &&
+            target.system === selectedEquipment.system,
+        ),
+      )
     : 0
 
   function changeEquipment(offset: -1 | 1) {
     if (!detailTargets.length) return
-    const nextIndex = (selectedEquipmentIndex + offset + detailTargets.length) % detailTargets.length
+    const nextIndex =
+      (selectedEquipmentIndex + offset + detailTargets.length) %
+      detailTargets.length
     setSelectedEquipment(detailTargets[nextIndex])
   }
 
@@ -412,7 +528,10 @@ export default function App() {
     setScreen("equipmentDetail")
   }
 
-  function openEquipmentSection(section: EquipmentSectionId, system: EquipmentSystemFilter) {
+  function openEquipmentSection(
+    section: EquipmentSectionId,
+    system: EquipmentSystemFilter,
+  ) {
     setEquipmentSystemFilter(system)
     setScreen(
       section === "units"
@@ -431,11 +550,21 @@ export default function App() {
 
   useEffect(() => {
     const handleOpenEquipmentSection = (event: Event) => {
-      const detail = (event as CustomEvent<{ section: EquipmentSectionId; system: EquipmentSystemFilter }>).detail
+      const detail = (event as CustomEvent<{
+        section: EquipmentSectionId
+        system: EquipmentSystemFilter
+      }>).detail
       if (detail) openEquipmentSection(detail.section, detail.system)
     }
-    window.addEventListener("prototype:open-equipment-section", handleOpenEquipmentSection)
-    return () => window.removeEventListener("prototype:open-equipment-section", handleOpenEquipmentSection)
+    window.addEventListener(
+      "prototype:open-equipment-section",
+      handleOpenEquipmentSection,
+    )
+    return () =>
+      window.removeEventListener(
+        "prototype:open-equipment-section",
+        handleOpenEquipmentSection,
+      )
   }, [])
 
   return (
@@ -481,6 +610,8 @@ export default function App() {
             onNext={() => changeEquipment(1)}
             operationalEquipmentView={operationalEquipmentView}
             onOperationalEquipmentViewChange={setOperationalEquipmentView}
+            overviewEquipmentVisible={overviewEquipmentVisible}
+            overviewEquipmentView={overviewEquipmentView}
             onOpenEquipmentSection={openEquipmentSection}
             onBack={() => {
               if (equipmentDetailOrigin) {
@@ -519,7 +650,9 @@ export default function App() {
           <div className="site-overview-screen absolute inset-0">
             <SiteOverviewPage
               siteId={selectedSiteId}
-              equipmentOnOverview={equipmentOnOverview}
+              overviewEquipmentVisible={overviewEquipmentVisible}
+              overviewEquipmentView={overviewEquipmentView}
+              onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
               onOpenEquipment={() => setScreen("units")}
@@ -533,7 +666,9 @@ export default function App() {
           <div className="site-overview-screen absolute inset-0">
             <SiteOverviewPage
               siteId={selectedSiteId}
-              equipmentOnOverview={equipmentOnOverview}
+              overviewEquipmentVisible={overviewEquipmentVisible}
+              overviewEquipmentView={overviewEquipmentView}
+              onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
               onOpenEquipment={() => setScreen("units")}
@@ -547,7 +682,9 @@ export default function App() {
           <div className="site-overview-screen absolute inset-0">
             <SiteOverviewPage
               siteId={selectedSiteId}
-              equipmentOnOverview={equipmentOnOverview}
+              overviewEquipmentVisible={overviewEquipmentVisible}
+              overviewEquipmentView={overviewEquipmentView}
+              onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
               onOpenEquipment={() => setScreen("units")}
@@ -590,6 +727,10 @@ export default function App() {
         onOpenAllScreens={() => setScreen("home")}
         operationalEquipmentView={operationalEquipmentView}
         onOperationalEquipmentViewChange={setOperationalEquipmentView}
+        overviewEquipmentVisible={overviewEquipmentVisible}
+        onOverviewEquipmentVisibleChange={setOverviewEquipmentVisible}
+        overviewEquipmentView={overviewEquipmentView}
+        onOverviewEquipmentViewChange={setOverviewEquipmentView}
       />
     </div>
   )
