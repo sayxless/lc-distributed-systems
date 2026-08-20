@@ -20,8 +20,10 @@ import EquipmentDetailPage from "@/EquipmentDetailPage"
 import SiteOverviewPage from "@/SiteOverviewPage"
 import type {
   OperationalEquipmentHealthFilter,
+  OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
 } from "@/OperationalEquipmentList"
+import type { EquipmentAttentionIndicatorMode } from "@/EquipmentAttentionIndicator"
 
 type Screen = "home" | "units" | "distributed" | "gensets" | "bess" | "paralleling" | "site" | "chargers" | "siteOverview" | "siteOverview2" | "siteOverviewCards" | "siteEquipment" | "equipmentDetail"
 
@@ -275,8 +277,14 @@ function PrototypeSettings({
   onOpenAllScreens,
   equipmentPresentation,
   onEquipmentPresentationChange,
+  groupEquipmentBySystem,
+  onGroupEquipmentBySystemChange,
+  groupEquipmentByType,
+  onGroupEquipmentByTypeChange,
   showEquipmentAttentionCount,
   onShowEquipmentAttentionCountChange,
+  equipmentAttentionIndicator,
+  onEquipmentAttentionIndicatorChange,
   overviewEquipmentVisible,
   onOverviewEquipmentVisibleChange,
 }: {
@@ -285,8 +293,16 @@ function PrototypeSettings({
   onEquipmentPresentationChange: (
     presentation: OperationalEquipmentPresentation,
   ) => void
+  groupEquipmentBySystem: boolean
+  onGroupEquipmentBySystemChange: (groupBySystem: boolean) => void
+  groupEquipmentByType: boolean
+  onGroupEquipmentByTypeChange: (groupByType: boolean) => void
   showEquipmentAttentionCount: boolean
   onShowEquipmentAttentionCountChange: (visible: boolean) => void
+  equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
+  onEquipmentAttentionIndicatorChange: (
+    indicator: EquipmentAttentionIndicatorMode,
+  ) => void
   overviewEquipmentVisible: boolean
   onOverviewEquipmentVisibleChange: (visible: boolean) => void
 }) {
@@ -340,9 +356,7 @@ function PrototypeSettings({
             All screens
           </button>
           <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
-            <p className="text-sm font-medium text-[#30353d]">
-              Equipment view
-            </p>
+            <p className="text-sm font-medium text-[#30353d]">Equipment view</p>
             <div
               role="group"
               aria-label="Equipment presentation settings"
@@ -366,6 +380,64 @@ function PrototypeSettings({
                   {label}
                 </button>
               ))}
+            </div>
+          </div>
+          <div className="mt-1 border-t border-[#eeeeee] px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[#30353d]">
+                  Group by system
+                </p>
+                <p className="mt-0.5 text-xs text-[#757575]">
+                  Segment view only
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={groupEquipmentBySystem}
+                aria-label="Group equipment by system"
+                onClick={() =>
+                  onGroupEquipmentBySystemChange(!groupEquipmentBySystem)
+                }
+                className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                  groupEquipmentBySystem ? "bg-[#1dcc6e]" : "bg-[#c9c9c9]"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-transform duration-150 ${
+                    groupEquipmentBySystem ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+          <div className="mt-1 border-t border-[#eeeeee] px-3 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-medium text-[#30353d]">
+                  Group by type
+                </p>
+                <p className="mt-0.5 text-xs text-[#757575]">
+                  Segment view only
+                </p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={groupEquipmentByType}
+                aria-label="Group equipment by type"
+                onClick={() => onGroupEquipmentByTypeChange(!groupEquipmentByType)}
+                className={`relative inline-flex h-6 w-10 shrink-0 items-center rounded-full transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                  groupEquipmentByType ? "bg-[#1dcc6e]" : "bg-[#c9c9c9]"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none absolute left-0.5 top-0.5 size-5 rounded-full bg-white shadow-[0_1px_2px_rgba(0,0,0,0.16)] transition-transform duration-150 ${
+                    groupEquipmentByType ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </button>
             </div>
           </div>
           <div className="mt-1 border-t border-[#eeeeee] px-3 py-3">
@@ -395,6 +467,30 @@ function PrototypeSettings({
                   }`}
                 />
               </button>
+            </div>
+            <div
+              role="group"
+              aria-label="Equipment attention indicator"
+              className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1"
+            >
+              {([
+                ["counter", "Counter"],
+                ["highlight", "Highlight"],
+              ] as const).map(([indicator, label]) => (
+                <button
+                  key={indicator}
+                  type="button"
+                  aria-pressed={equipmentAttentionIndicator === indicator}
+                  onClick={() => onEquipmentAttentionIndicatorChange(indicator)}
+                  className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                    equipmentAttentionIndicator === indicator
+                      ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                      : "text-[#666] hover:text-[#171717]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
           </div>
           <div className="mt-1 border-t border-[#eeeeee] px-3 pb-2 pt-3">
@@ -449,20 +545,39 @@ export default function App() {
     useState<EquipmentDetailTarget | null>(null)
   const [equipmentDetailOrigin, setEquipmentDetailOrigin] =
     useState<EquipmentDetailOrigin | null>(null)
-  const [overviewEquipmentVisible, setOverviewEquipmentVisible] =
-    useState(true)
+  const [overviewEquipmentVisible, setOverviewEquipmentVisible] = useState(true)
   const [equipmentHealthFilter, setEquipmentHealthFilter] =
     useState<OperationalEquipmentHealthFilter>("critical")
   const [equipmentPresentation, setEquipmentPresentation] =
     useState<OperationalEquipmentPresentation>("segment")
+  const [groupEquipmentBySystem, setGroupEquipmentBySystem] = useState(true)
+  const [groupEquipmentByType, setGroupEquipmentByType] = useState(false)
+  const [equipmentGroupingOrder, setEquipmentGroupingOrder] = useState<
+    OperationalEquipmentGrouping[]
+  >(["system", "type"])
   const [showEquipmentAttentionCount, setShowEquipmentAttentionCount] =
     useState(true)
+  const [equipmentAttentionIndicator, setEquipmentAttentionIndicator] =
+    useState<EquipmentAttentionIndicatorMode>("counter")
   const [equipmentSystemFilter, setEquipmentSystemFilter] =
     useState<EquipmentSystemFilter | null>(null)
 
   useNavigation(screen, setScreen)
 
   const equipmentTabEnabled = true
+
+  function changeEquipmentGrouping(
+    grouping: OperationalEquipmentGrouping,
+    enabled: boolean,
+  ) {
+    if (grouping === "system") setGroupEquipmentBySystem(enabled)
+    else setGroupEquipmentByType(enabled)
+    setEquipmentGroupingOrder((current) =>
+      enabled
+        ? [...current.filter((item) => item !== grouping), grouping]
+        : current.filter((item) => item !== grouping),
+    )
+  }
 
   function changeSite(offset: -1 | 1) {
     const currentIndex = sites.findIndex((site) => site.id === selectedSiteId)
@@ -606,7 +721,11 @@ export default function App() {
             equipmentHealthFilter={equipmentHealthFilter}
             onEquipmentHealthFilterChange={setEquipmentHealthFilter}
             equipmentPresentation={equipmentPresentation}
+            groupEquipmentBySystem={groupEquipmentBySystem}
+            groupEquipmentByType={groupEquipmentByType}
+            equipmentGroupingOrder={equipmentGroupingOrder}
             showEquipmentAttentionCount={showEquipmentAttentionCount}
+            equipmentAttentionIndicator={equipmentAttentionIndicator}
             onBack={() => {
               if (equipmentDetailOrigin) {
                 setSelectedSiteId(equipmentDetailOrigin.siteId)
@@ -648,7 +767,11 @@ export default function App() {
               equipmentHealthFilter={equipmentHealthFilter}
               onEquipmentHealthFilterChange={setEquipmentHealthFilter}
               equipmentPresentation={equipmentPresentation}
+              groupEquipmentBySystem={groupEquipmentBySystem}
+              groupEquipmentByType={groupEquipmentByType}
+              equipmentGroupingOrder={equipmentGroupingOrder}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
+              equipmentAttentionIndicator={equipmentAttentionIndicator}
               onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
@@ -667,7 +790,11 @@ export default function App() {
               equipmentHealthFilter={equipmentHealthFilter}
               onEquipmentHealthFilterChange={setEquipmentHealthFilter}
               equipmentPresentation={equipmentPresentation}
+              groupEquipmentBySystem={groupEquipmentBySystem}
+              groupEquipmentByType={groupEquipmentByType}
+              equipmentGroupingOrder={equipmentGroupingOrder}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
+              equipmentAttentionIndicator={equipmentAttentionIndicator}
               onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
@@ -686,7 +813,11 @@ export default function App() {
               equipmentHealthFilter={equipmentHealthFilter}
               onEquipmentHealthFilterChange={setEquipmentHealthFilter}
               equipmentPresentation={equipmentPresentation}
+              groupEquipmentBySystem={groupEquipmentBySystem}
+              groupEquipmentByType={groupEquipmentByType}
+              equipmentGroupingOrder={equipmentGroupingOrder}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
+              equipmentAttentionIndicator={equipmentAttentionIndicator}
               onOpenEquipmentDetail={openEquipmentDetail}
               equipmentTabEnabled={equipmentTabEnabled}
               onOpenSites={() => setScreen("site")}
@@ -709,7 +840,11 @@ export default function App() {
               equipmentHealthFilter={equipmentHealthFilter}
               onEquipmentHealthFilterChange={setEquipmentHealthFilter}
               equipmentPresentation={equipmentPresentation}
+              groupEquipmentBySystem={groupEquipmentBySystem}
+              groupEquipmentByType={groupEquipmentByType}
+              equipmentGroupingOrder={equipmentGroupingOrder}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
+              equipmentAttentionIndicator={equipmentAttentionIndicator}
             />
           </div>
         )}
@@ -731,8 +866,18 @@ export default function App() {
         onOpenAllScreens={() => setScreen("home")}
         equipmentPresentation={equipmentPresentation}
         onEquipmentPresentationChange={setEquipmentPresentation}
+        groupEquipmentBySystem={groupEquipmentBySystem}
+        onGroupEquipmentBySystemChange={(enabled) =>
+          changeEquipmentGrouping("system", enabled)
+        }
+        groupEquipmentByType={groupEquipmentByType}
+        onGroupEquipmentByTypeChange={(enabled) =>
+          changeEquipmentGrouping("type", enabled)
+        }
         showEquipmentAttentionCount={showEquipmentAttentionCount}
         onShowEquipmentAttentionCountChange={setShowEquipmentAttentionCount}
+        equipmentAttentionIndicator={equipmentAttentionIndicator}
+        onEquipmentAttentionIndicatorChange={setEquipmentAttentionIndicator}
         overviewEquipmentVisible={overviewEquipmentVisible}
         onOverviewEquipmentVisibleChange={setOverviewEquipmentVisible}
       />

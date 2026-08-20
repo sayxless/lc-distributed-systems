@@ -12,9 +12,13 @@ import {
 import OperationalEquipmentList from "@/OperationalEquipmentList"
 import type {
   OperationalEquipmentHealthFilter,
+  OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
 } from "@/OperationalEquipmentList"
 import { equipmentAttentionCount } from "@/OperationalEquipmentList"
+import EquipmentAttentionIndicator, {
+  type EquipmentAttentionIndicatorMode,
+} from "@/EquipmentAttentionIndicator"
 import type { EquipmentDetailTarget } from "@/EquipmentPage"
 
 type LiveEntity = { kind: "unit" unit: IntegratedUnit position: number } | {
@@ -916,7 +920,11 @@ export default function SiteOverviewPage({
   equipmentHealthFilter,
   onEquipmentHealthFilterChange,
   equipmentPresentation,
+  groupEquipmentBySystem,
+  groupEquipmentByType,
+  equipmentGroupingOrder,
   showEquipmentAttentionCount,
+  equipmentAttentionIndicator,
   onOpenEquipmentDetail,
   equipmentTabEnabled,
   onOpenSites,
@@ -928,9 +936,15 @@ export default function SiteOverviewPage({
   siteId: string
   overviewEquipmentVisible: boolean
   equipmentHealthFilter: OperationalEquipmentHealthFilter
-  onEquipmentHealthFilterChange: (filter: OperationalEquipmentHealthFilter) => void
+  onEquipmentHealthFilterChange: (
+    filter: OperationalEquipmentHealthFilter,
+  ) => void
   equipmentPresentation: OperationalEquipmentPresentation
+  groupEquipmentBySystem: boolean
+  groupEquipmentByType: boolean
+  equipmentGroupingOrder: OperationalEquipmentGrouping[]
   showEquipmentAttentionCount: boolean
+  equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
   onOpenEquipmentDetail: (target: EquipmentDetailTarget) => void
   equipmentTabEnabled: boolean
   onOpenSites: () => void
@@ -1050,7 +1064,10 @@ export default function SiteOverviewPage({
                 if (label === "Incidents") {
                   onOpenEquipmentTab()
                   window.setTimeout(
-                    () => window.dispatchEvent(new Event("prototype:open-site-incidents")),
+                    () =>
+                      window.dispatchEvent(
+                        new Event("prototype:open-site-incidents"),
+                      ),
                     0,
                   )
                 }
@@ -1071,10 +1088,11 @@ export default function SiteOverviewPage({
               className="inline-flex h-11 items-center gap-1.5 border-b-2 border-transparent px-3 text-[14px] text-[#525252] hover:text-[#0a0a0a]"
             >
               Equipment
-              {showEquipmentAttentionCount && attentionCount > 0 && (
-                <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] leading-5 text-[#525252]">
-                  {attentionCount}
-                </span>
+              {showEquipmentAttentionCount && (
+                <EquipmentAttentionIndicator
+                  count={attentionCount}
+                  mode={equipmentAttentionIndicator}
+                />
               )}
             </button>
           )}
@@ -1103,6 +1121,9 @@ export default function SiteOverviewPage({
                   healthFilter={equipmentHealthFilter}
                   onHealthFilterChange={onEquipmentHealthFilterChange}
                   view={equipmentPresentation}
+                  groupBySystem={groupEquipmentBySystem}
+                  groupByType={groupEquipmentByType}
+                  groupingOrder={equipmentGroupingOrder}
                   hideNormalWhenGrouped
                 />
               </section>

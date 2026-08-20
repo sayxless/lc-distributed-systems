@@ -3,9 +3,13 @@ import EquipmentTypeIcon from "@/EquipmentTypeIcon"
 import OperationalEquipmentList from "@/OperationalEquipmentList"
 import type {
   OperationalEquipmentHealthFilter,
+  OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
 } from "@/OperationalEquipmentList"
 import { equipmentAttentionCount } from "@/OperationalEquipmentList"
+import EquipmentAttentionIndicator, {
+  type EquipmentAttentionIndicatorMode,
+} from "@/EquipmentAttentionIndicator"
 import StatusIcon from "@/StatusIcon"
 import { getPartner, getSite, sites } from "@/prototypeData"
 import type { EquipmentDetailTarget } from "@/EquipmentPage"
@@ -22,7 +26,11 @@ type SiteOperationalEquipmentPageProps = {
     filter: OperationalEquipmentHealthFilter,
   ) => void
   equipmentPresentation: OperationalEquipmentPresentation
+  groupEquipmentBySystem: boolean
+  groupEquipmentByType: boolean
+  equipmentGroupingOrder: OperationalEquipmentGrouping[]
   showEquipmentAttentionCount: boolean
+  equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
 }
 
 function IconButton({
@@ -100,7 +108,18 @@ function SiteIncidents() {
                 <td className="px-4 font-medium">{id}</td>
                 <td className="px-4">
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e5e5] px-2 py-1">
-                    <span aria-hidden="true" className={severity === "Stopper" ? "text-[#d5302a]" : severity === "Medium" ? "text-[#f4a51c]" : severity === "Low" ? "text-[#8a8a8a]" : "text-[#f05a55]"}>
+                    <span
+                      aria-hidden="true"
+                      className={
+                        severity === "Stopper"
+                          ? "text-[#d5302a]"
+                          : severity === "Medium"
+                            ? "text-[#f4a51c]"
+                            : severity === "Low"
+                              ? "text-[#8a8a8a]"
+                              : "text-[#f05a55]"
+                      }
+                    >
                       {severity === "Stopper" ? "!" : "▮▮▮"}
                     </span>
                     {severity}
@@ -127,7 +146,11 @@ export default function SiteOperationalEquipmentPage({
   equipmentHealthFilter,
   onEquipmentHealthFilterChange,
   equipmentPresentation,
+  groupEquipmentBySystem,
+  groupEquipmentByType,
+  equipmentGroupingOrder,
   showEquipmentAttentionCount,
+  equipmentAttentionIndicator,
 }: SiteOperationalEquipmentPageProps) {
   const [activeTab, setActiveTab] = useState<"equipment" | "incidents">(
     "equipment",
@@ -135,7 +158,8 @@ export default function SiteOperationalEquipmentPage({
   useEffect(() => {
     const openIncidents = () => setActiveTab("incidents")
     window.addEventListener("prototype:open-site-incidents", openIncidents)
-    return () => window.removeEventListener("prototype:open-site-incidents", openIncidents)
+    return () =>
+      window.removeEventListener("prototype:open-site-incidents", openIncidents)
   }, [])
   const site = getSite(siteId)
   const partner = getPartner(site.partnerId)
@@ -243,20 +267,29 @@ export default function SiteOperationalEquipmentPage({
           <button
             type="button"
             onClick={() => setActiveTab("incidents")}
-            className={`border-b-2 py-3 font-medium ${activeTab === "incidents" ? "border-[#171717]" : "border-transparent text-[#5c5c5c]"}`}
+            className={`border-b-2 py-3 font-medium ${
+              activeTab === "incidents"
+                ? "border-[#171717]"
+                : "border-transparent text-[#5c5c5c]"
+            }`}
           >
             Incidents
           </button>
           <button
             type="button"
             onClick={() => setActiveTab("equipment")}
-            className={`inline-flex items-center gap-1.5 border-b-2 py-3 font-medium ${activeTab === "equipment" ? "border-[#171717]" : "border-transparent text-[#5c5c5c]"}`}
+            className={`inline-flex items-center gap-1.5 border-b-2 py-3 font-medium ${
+              activeTab === "equipment"
+                ? "border-[#171717]"
+                : "border-transparent text-[#5c5c5c]"
+            }`}
           >
             Equipment
-            {showEquipmentAttentionCount && attentionCount > 0 && (
-              <span className="inline-flex min-w-5 items-center justify-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] leading-5 text-[#525252]">
-                {attentionCount}
-              </span>
+            {showEquipmentAttentionCount && (
+              <EquipmentAttentionIndicator
+                count={attentionCount}
+                mode={equipmentAttentionIndicator}
+              />
             )}
           </button>
           <button className="py-3 text-[#5c5c5c]">Settings</button>
@@ -271,6 +304,9 @@ export default function SiteOperationalEquipmentPage({
               healthFilter={equipmentHealthFilter}
               onHealthFilterChange={onEquipmentHealthFilterChange}
               view={equipmentPresentation}
+              groupBySystem={groupEquipmentBySystem}
+              groupByType={groupEquipmentByType}
+              groupingOrder={equipmentGroupingOrder}
             />
           </div>
         )}

@@ -15,24 +15,32 @@ type OperationalEquipmentListProps = {
   healthFilter: OperationalEquipmentHealthFilter
   onHealthFilterChange: (filter: OperationalEquipmentHealthFilter) => void
   view: OperationalEquipmentPresentation
+  groupBySystem?: boolean
+  groupByType?: boolean
+  groupingOrder?: OperationalEquipmentGrouping[]
   hideNormalWhenGrouped?: boolean
 }
 
 export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer" | "fullTable"
-export type OperationalEquipmentHealthFilter =
-  | "offline"
-  | "critical"
-  | "warning"
-  | "normal"
-  | "all"
+export type OperationalEquipmentHealthFilter = "critical" | "warning" | "normal" | "all"
 export type OperationalEquipmentPresentation = "segment" | "grouped"
+export type OperationalEquipmentGrouping = "system" | "type"
 
-type Health = Exclude<OperationalEquipmentHealthFilter, "all">
+type Health = Exclude<OperationalEquipmentHealthFilter, "all"> | "offline"
 type OperationalRow = EquipmentDetailTarget & {
   health: Health
   incidents: number
   connection: "online" | "offline"
 }
+type SortColumn =
+  | "id"
+  | "type"
+  | "system"
+  | "health"
+  | "incidents"
+  | "connection"
+type SortDirection = "ascending" | "descending"
+type EquipmentSort = { column: SortColumn; direction: SortDirection } | null
 
 const leafSections: EquipmentSectionId[] = [
   "chargers",
@@ -56,7 +64,7 @@ function operationalState(
 ): Pick<OperationalRow, "health" | "incidents" | "connection"> {
   const value = hash(target.id)
   if (value % 13 === 0)
-    return { health: "offline", incidents: 0, connection: "offline" }
+    return { health: "normal", incidents: 0, connection: "offline" }
   if (value % 7 === 0)
     return { health: "critical", incidents: 2, connection: "online" }
   if (value % 4 === 0)
@@ -81,10 +89,28 @@ function sortByHealth(rows: OperationalRow[]) {
   )
 }
 
-export function equipmentAttentionCount({
-  siteId,
-  parent,
-}: {
+function sortOperationalRows(rows: OperationalRow[], sort: EquipmentSort) {
+  if (!sort) return rows
+
+  const direction = sort.direction === "ascending" ? 1 : -1
+  return [...rows].sort((left, right) => {
+    const comparison = {
+      id: left.id.localeCompare(right.id),
+      type: typeLabel(left.section).localeCompare(typeLabel(right.section)),
+      system: (left.system ?? "").localeCompare(right.system ?? ""),
+      health:
+        healthMeta(left.health).priority - healthMeta(right.health).priority,
+      incidents: left.incidents - right.incidents,
+      connection:
+        (left.connection === "offline" ? 0 : 1) -
+        (right.connection === "offline" ? 0 : 1),
+    }[sort.column]
+
+    return direction * (comparison || left.id.localeCompare(right.id))
+  })
+}
+
+export function equipmentAttentionCount({ siteId, parent }: {
   siteId?: string
   parent?: EquipmentDetailTarget
 } = {}) {
@@ -198,36 +224,69 @@ function pluralLabel(section: EquipmentSectionId) {
 function OperationalTable({
   rows,
   onOpenDetail,
-  groups,
   showSystem,
+  showType,
+  sort = null,
+  onSort = () => {},
+  frameClassName = "rounded-xl border border-[#e6e6e6] bg-white",
 }: {
   rows: OperationalRow[]
   onOpenDetail: (target: EquipmentDetailTarget) => void
-  groups?: Record<string, OperationalRow[]>
   showSystem: boolean
+  showType: boolean
+  sort?: EquipmentSort
+  onSort?: (column: SortColumn) => void
+  frameClassName?: string
 }) {
   const open = (target: EquipmentDetailTarget) => onOpenDetail(target)
-  // Keep the normal equipment grouped in data, but hide the group labels for now.
-  const tableRows = groups ? Object.values(groups).flat() : rows
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-[#e6e6e6] bg-white">
+    <div className={`overflow-x-auto ${frameClassName}`}>
       <table
-        style={{ minWidth: showSystem ? 820 : 680 }}
+        style={{ minWidth: 520 + (showType ? 150 : 0) + (showSystem ? 150 : 0) }}
         className="w-full border-collapse text-left text-sm"
       >
         <thead className="h-11 border-b border-[#e6e6e6] text-[13px] font-normal text-[#757575]">
           <tr>
-            <th className="px-4 font-normal">ID</th>
-            <th className="px-4 font-normal">Type</th>
-            {showSystem && <th className="px-4 font-normal">System</th>}
-            <th className="px-4 font-normal">Health</th>
-            <th className="px-4 font-normal">Incidents</th>
-            <th className="px-4 font-normal">Connection</th>
+            <SortableColumnHeader column="id" label="ID" sort={sort} onSort={onSort} />
+            {showType && (
+              <SortableColumnHeader
+                column="type"
+                label="Type"
+                sort={sort}
+                onSort={onSort}
+              />
+            )}
+            {showSystem && (
+              <SortableColumnHeader
+                column="system"
+                label="System"
+                sort={sort}
+                onSort={onSort}
+              />
+            )}
+            <SortableColumnHeader
+              column="health"
+              label="Health"
+              sort={sort}
+              onSort={onSort}
+            />
+            <SortableColumnHeader
+              column="incidents"
+              label="Incidents"
+              sort={sort}
+              onSort={onSort}
+            />
+            <SortableColumnHeader
+              column="connection"
+              label="Connection"
+              sort={sort}
+              onSort={onSort}
+            />
           </tr>
         </thead>
         <tbody className="divide-y divide-[#e6e6e6]">
-          {tableRows.map((row) => (
+          {rows.map((row) => (
             <tr
               key={row.id}
               tabIndex={0}
@@ -252,12 +311,14 @@ function OperationalTable({
                   {row.id}
                 </button>
               </td>
-              <td className="px-4">
-                <span className="inline-flex items-center gap-2 whitespace-nowrap text-[#454545]">
-                  <EquipmentTypeIcon kind={row.section} />
-                  {typeLabel(row.section)}
-                </span>
-              </td>
+              {showType && (
+                <td className="px-4">
+                  <span className="inline-flex items-center gap-2 whitespace-nowrap text-[#454545]">
+                    <EquipmentTypeIcon kind={row.section} />
+                    {typeLabel(row.section)}
+                  </span>
+                </td>
+              )}
               {showSystem && (
                 <td className="px-4 text-[#454545]">
                   <span className="inline-flex items-center gap-2 whitespace-nowrap">
@@ -285,6 +346,192 @@ function OperationalTable({
           ))}
         </tbody>
       </table>
+    </div>
+  )
+}
+
+function SortableColumnHeader({
+  column,
+  label,
+  sort,
+  onSort,
+}: {
+  column: SortColumn
+  label: string
+  sort: EquipmentSort
+  onSort: (column: SortColumn) => void
+}) {
+  const direction = sort?.column === column ? sort.direction : undefined
+
+  return (
+    <th
+      aria-sort={direction ?? "none"}
+      className="px-4 font-normal"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className="inline-flex items-center gap-1 rounded-sm text-left hover:text-[#171717] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9]"
+      >
+        {label}
+        {direction && (
+          <span aria-hidden="true" className="text-[12px] leading-none">
+            {direction === "ascending" ? "↑" : "↓"}
+          </span>
+        )}
+      </button>
+    </th>
+  )
+}
+
+function EquipmentGroupingHeader({
+  grouping,
+  value,
+  rows,
+  isLeafGroup,
+}: {
+  grouping: OperationalEquipmentGrouping
+  value: string
+  rows: OperationalRow[]
+  isLeafGroup: boolean
+}) {
+  const systemId = value
+  const kind = distributedSystemIds.has(systemId) ? "distributed" : "unit"
+
+  function openSystem() {
+    window.dispatchEvent(
+      new CustomEvent("prototype:open-equipment-section", {
+        detail: {
+          section: kind === "distributed" ? "distributed" : "units",
+          system: { id: systemId, kind },
+        },
+      }),
+    )
+  }
+
+  return (
+    <div
+      className={`flex min-h-12 items-center gap-2 px-4 ${
+        isLeafGroup ? "bg-gray-50" : ""
+      }`}
+    >
+      {grouping === "system" ? (
+        <>
+        <EquipmentTypeIcon
+          kind={kind === "distributed" ? "distributed" : "units"}
+        />
+        <button
+          type="button"
+          onClick={openSystem}
+          className={`rounded-sm font-medium text-[#171717] underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+            isLeafGroup ? "" : "text-base leading-6"
+          }`}
+        >
+          {systemId}
+        </button>
+        </>
+      ) : (
+        <>
+          <EquipmentTypeIcon kind={rows[0].section} />
+          <h3
+            className={`font-medium text-[#171717] ${
+              isLeafGroup ? "" : "text-base leading-6"
+            }`}
+          >
+            {value}
+          </h3>
+        </>
+      )}
+        <span className="text-[#757575]">{rows.length}</span>
+    </div>
+  )
+}
+
+function groupRows(rows: OperationalRow[], grouping: OperationalEquipmentGrouping) {
+  const groups = rows.reduce((groups, row) => {
+    const key =
+      grouping === "system"
+        ? (row.system ?? "Unassigned")
+        : typeLabel(row.section)
+    const group = groups.get(key) ?? []
+    group.push(row)
+    groups.set(key, group)
+    return groups
+  }, new Map<string, OperationalRow[]>())
+
+  return Array.from(groups).sort(([left], [right]) => left.localeCompare(right))
+}
+
+function GroupedEquipmentTables({
+  rows,
+  groupingOrder,
+  hiddenGroupings = groupingOrder,
+  onOpenDetail,
+  sort,
+  onSort,
+}: {
+  rows: OperationalRow[]
+  groupingOrder: OperationalEquipmentGrouping[]
+  hiddenGroupings?: OperationalEquipmentGrouping[]
+  onOpenDetail: (target: EquipmentDetailTarget) => void
+  sort: EquipmentSort
+  onSort: (column: SortColumn) => void
+}) {
+  const [grouping, ...nestedGrouping] = groupingOrder
+  const hiddenColumns = new Set(hiddenGroupings)
+
+  if (!grouping) {
+    return (
+      <OperationalTable
+        rows={sortOperationalRows(rows, sort)}
+        showSystem
+        showType
+        onOpenDetail={onOpenDetail}
+        sort={sort}
+        onSort={onSort}
+      />
+    )
+  }
+
+  return (
+    <div className="space-y-5">
+      {groupRows(rows, grouping).map(([value, group]) => (
+        <section
+          key={`${grouping}-${value}`}
+          className={
+            nestedGrouping.length
+              ? "space-y-0"
+              : "overflow-hidden rounded-xl border border-[#e6e6e6] bg-white"
+          }
+        >
+          <EquipmentGroupingHeader
+            grouping={grouping}
+            value={value}
+            rows={group}
+            isLeafGroup={nestedGrouping.length === 0}
+          />
+          {nestedGrouping.length ? (
+            <GroupedEquipmentTables
+              rows={group}
+              groupingOrder={nestedGrouping}
+              hiddenGroupings={hiddenGroupings}
+              onOpenDetail={onOpenDetail}
+              sort={sort}
+              onSort={onSort}
+            />
+          ) : (
+            <OperationalTable
+              rows={sortOperationalRows(group, sort)}
+              showSystem={!hiddenColumns.has("system")}
+              showType={!hiddenColumns.has("type")}
+              onOpenDetail={onOpenDetail}
+              sort={sort}
+              onSort={onSort}
+              frameClassName="border-0 bg-white"
+            />
+          )}
+        </section>
+      ))}
     </div>
   )
 }
@@ -344,6 +591,7 @@ function EquipmentGroup({
           <OperationalTable
             rows={sortByHealth(rows)}
             showSystem={false}
+            showType
             onOpenDetail={onOpenDetail}
           />
         </div>
@@ -1295,8 +1543,12 @@ export default function OperationalEquipmentList({
   healthFilter,
   onHealthFilterChange,
   view,
+  groupBySystem = true,
+  groupByType = false,
+  groupingOrder = ["system", "type"],
   hideNormalWhenGrouped = false,
 }: OperationalEquipmentListProps) {
+  const [sort, setSort] = useState<EquipmentSort>(null)
   const rows = useMemo(() => {
     const site = siteId ? getSite(siteId) : undefined
     return leafSections
@@ -1306,15 +1558,16 @@ export default function OperationalEquipmentList({
       .map((target) => ({ ...target, ...operationalState(target) }))
   }, [siteId, parent?.id])
   const showSystem = !parent
-  const availableFilters = (["critical", "warning", "normal", "offline"] as const)
-    .filter((health) => rows.some((row) => row.health === health))
+  const availableFilters = ([
+    "critical",
+    "warning",
+    "normal",
+  ] as const).filter((health) => rows.some((row) => row.health === health))
   const defaultFilter = availableFilters.includes("critical")
     ? "critical"
     : availableFilters.includes("warning")
       ? "warning"
-      : availableFilters.includes("offline")
-        ? "offline"
-        : "all"
+      : "all"
   const activeFilter =
     healthFilter === "all" || availableFilters.includes(healthFilter)
       ? healthFilter
@@ -1325,7 +1578,7 @@ export default function OperationalEquipmentList({
       : rows
           .filter((row) => row.health === activeFilter)
           .sort((left, right) => left.id.localeCompare(right.id))
-  const healthGroups = (["offline", "critical", "warning", "normal"] as const)
+  const healthGroups = (["critical", "warning", "normal"] as const)
     .map((health) => ({
       health,
       rows: rows
@@ -1333,6 +1586,22 @@ export default function OperationalEquipmentList({
         .sort((left, right) => left.id.localeCompare(right.id)),
     }))
     .filter((group) => group.rows.length > 0)
+  const activeGroupingOrder = groupingOrder.filter(
+    (grouping) =>
+      (grouping === "system" && groupBySystem) ||
+      (grouping === "type" && groupByType),
+  )
+  const toggleSort = (column: SortColumn) => {
+    setSort((current) =>
+      current?.column === column
+        ? {
+            column,
+            direction:
+              current.direction === "ascending" ? "descending" : "ascending",
+          }
+        : { column, direction: "ascending" },
+    )
+  }
 
   useEffect(() => {
     if (activeFilter !== healthFilter) onHealthFilterChange(activeFilter)
@@ -1378,34 +1647,52 @@ export default function OperationalEquipmentList({
               </button>
             ))}
           </div>
-          <OperationalTable
-            rows={visibleRows}
-            showSystem={showSystem}
-            onOpenDetail={onOpenDetail}
-          />
+          {activeGroupingOrder.length ? (
+            <GroupedEquipmentTables
+              rows={visibleRows}
+              groupingOrder={activeGroupingOrder}
+              onOpenDetail={onOpenDetail}
+              sort={sort}
+              onSort={toggleSort}
+            />
+          ) : (
+            <OperationalTable
+              rows={sortOperationalRows(visibleRows, sort)}
+              showSystem={showSystem}
+              showType
+              onOpenDetail={onOpenDetail}
+              sort={sort}
+              onSort={toggleSort}
+            />
+          )}
         </>
       ) : (
         <div className="space-y-5">
           {healthGroups
-            .filter((group) => !hideNormalWhenGrouped || group.health !== "normal")
+            .filter(
+              (group) => !hideNormalWhenGrouped || group.health !== "normal",
+            )
             .map((group) => (
-            <section key={group.health}>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-[14px] font-medium leading-5 text-[#171717]">
-                  {healthMeta(group.health).label}
-                </h2>
-                <span className="inline-flex h-5 items-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] font-medium leading-4 text-[#525252]">
-                  {group.rows.length}
-                </span>
-              </div>
-              <div className="mt-3">
-                <OperationalTable
-                  rows={group.rows}
-                  showSystem={showSystem}
-                  onOpenDetail={onOpenDetail}
-                />
-              </div>
-            </section>
+              <section key={group.health}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h2 className="text-[14px] font-medium leading-5 text-[#171717]">
+                    {healthMeta(group.health).label}
+                  </h2>
+                  <span className="inline-flex h-5 items-center rounded-md bg-[#f2f2f2] px-1.5 text-[12px] font-medium leading-4 text-[#525252]">
+                    {group.rows.length}
+                  </span>
+                </div>
+                <div className="mt-3">
+                  <OperationalTable
+                    rows={sortOperationalRows(group.rows, sort)}
+                    showSystem={showSystem}
+                    showType
+                    onOpenDetail={onOpenDetail}
+                    sort={sort}
+                    onSort={toggleSort}
+                  />
+                </div>
+              </section>
             ))}
         </div>
       )}
