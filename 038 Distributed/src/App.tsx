@@ -22,6 +22,7 @@ import type {
   OperationalEquipmentHealthFilter,
   OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
+  OperationalEquipmentStatusSource,
 } from "@/OperationalEquipmentList"
 import type { EquipmentAttentionIndicatorMode } from "@/EquipmentAttentionIndicator"
 
@@ -281,6 +282,8 @@ function PrototypeSettings({
   onGroupEquipmentBySystemChange,
   groupEquipmentByType,
   onGroupEquipmentByTypeChange,
+  equipmentStatusSource,
+  onEquipmentStatusSourceChange,
   showEquipmentAttentionCount,
   onShowEquipmentAttentionCountChange,
   equipmentAttentionIndicator,
@@ -297,6 +300,10 @@ function PrototypeSettings({
   onGroupEquipmentBySystemChange: (groupBySystem: boolean) => void
   groupEquipmentByType: boolean
   onGroupEquipmentByTypeChange: (groupByType: boolean) => void
+  equipmentStatusSource: OperationalEquipmentStatusSource
+  onEquipmentStatusSourceChange: (
+    source: OperationalEquipmentStatusSource,
+  ) => void
   showEquipmentAttentionCount: boolean
   onShowEquipmentAttentionCountChange: (visible: boolean) => void
   equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
@@ -373,6 +380,35 @@ function PrototypeSettings({
                   onClick={() => onEquipmentPresentationChange(presentation)}
                   className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
                     equipmentPresentation === presentation
+                      ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
+                      : "text-[#666] hover:text-[#171717]"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="mt-1 border-t border-[#eeeeee] px-3 py-3">
+            <p className="text-sm font-medium text-[#30353d]">
+              Equipment status
+            </p>
+            <div
+              role="group"
+              aria-label="Equipment status source"
+              className="mt-2 grid grid-cols-2 rounded-lg bg-[#f2f2f2] p-1"
+            >
+              {([
+                ["health", "Health"],
+                ["status", "Status"],
+              ] as const).map(([source, label]) => (
+                <button
+                  key={source}
+                  type="button"
+                  aria-pressed={equipmentStatusSource === source}
+                  onClick={() => onEquipmentStatusSourceChange(source)}
+                  className={`h-8 rounded-md px-2 text-xs transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#2357d9] ${
+                    equipmentStatusSource === source
                       ? "bg-white font-medium text-[#171717] shadow-[0_1px_2px_rgba(0,0,0,0.12)]"
                       : "text-[#666] hover:text-[#171717]"
                   }`}
@@ -559,6 +595,8 @@ export default function App() {
     useState(true)
   const [equipmentAttentionIndicator, setEquipmentAttentionIndicator] =
     useState<EquipmentAttentionIndicatorMode>("counter")
+  const [equipmentStatusSource, setEquipmentStatusSource] =
+    useState<OperationalEquipmentStatusSource>("health")
   const [equipmentSystemFilter, setEquipmentSystemFilter] =
     useState<EquipmentSystemFilter | null>(null)
 
@@ -724,6 +762,7 @@ export default function App() {
             groupEquipmentBySystem={groupEquipmentBySystem}
             groupEquipmentByType={groupEquipmentByType}
             equipmentGroupingOrder={equipmentGroupingOrder}
+            equipmentStatusSource={equipmentStatusSource}
             showEquipmentAttentionCount={showEquipmentAttentionCount}
             equipmentAttentionIndicator={equipmentAttentionIndicator}
             onBack={() => {
@@ -770,6 +809,7 @@ export default function App() {
               groupEquipmentBySystem={groupEquipmentBySystem}
               groupEquipmentByType={groupEquipmentByType}
               equipmentGroupingOrder={equipmentGroupingOrder}
+              equipmentStatusSource={equipmentStatusSource}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
               equipmentAttentionIndicator={equipmentAttentionIndicator}
               onOpenEquipmentDetail={openEquipmentDetail}
@@ -793,6 +833,7 @@ export default function App() {
               groupEquipmentBySystem={groupEquipmentBySystem}
               groupEquipmentByType={groupEquipmentByType}
               equipmentGroupingOrder={equipmentGroupingOrder}
+              equipmentStatusSource={equipmentStatusSource}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
               equipmentAttentionIndicator={equipmentAttentionIndicator}
               onOpenEquipmentDetail={openEquipmentDetail}
@@ -816,6 +857,7 @@ export default function App() {
               groupEquipmentBySystem={groupEquipmentBySystem}
               groupEquipmentByType={groupEquipmentByType}
               equipmentGroupingOrder={equipmentGroupingOrder}
+              equipmentStatusSource={equipmentStatusSource}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
               equipmentAttentionIndicator={equipmentAttentionIndicator}
               onOpenEquipmentDetail={openEquipmentDetail}
@@ -843,6 +885,7 @@ export default function App() {
               groupEquipmentBySystem={groupEquipmentBySystem}
               groupEquipmentByType={groupEquipmentByType}
               equipmentGroupingOrder={equipmentGroupingOrder}
+              equipmentStatusSource={equipmentStatusSource}
               showEquipmentAttentionCount={showEquipmentAttentionCount}
               equipmentAttentionIndicator={equipmentAttentionIndicator}
             />
@@ -874,6 +917,8 @@ export default function App() {
         onGroupEquipmentByTypeChange={(enabled) =>
           changeEquipmentGrouping("type", enabled)
         }
+        equipmentStatusSource={equipmentStatusSource}
+        onEquipmentStatusSourceChange={setEquipmentStatusSource}
         showEquipmentAttentionCount={showEquipmentAttentionCount}
         onShowEquipmentAttentionCountChange={setShowEquipmentAttentionCount}
         equipmentAttentionIndicator={equipmentAttentionIndicator}

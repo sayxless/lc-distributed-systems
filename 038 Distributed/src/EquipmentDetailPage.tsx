@@ -8,11 +8,13 @@ import type {
   OperationalEquipmentHealthFilter,
   OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
+  OperationalEquipmentStatusSource,
 } from "@/OperationalEquipmentList"
 import { equipmentAttentionCount } from "@/OperationalEquipmentList"
 import EquipmentAttentionIndicator, {
   type EquipmentAttentionIndicatorMode,
 } from "@/EquipmentAttentionIndicator"
+import IncidentSeverityBadge from "@/IncidentSeverityBadge"
 
 type EquipmentDetailPageProps = {
   target: EquipmentDetailTarget
@@ -32,6 +34,7 @@ type EquipmentDetailPageProps = {
   groupEquipmentBySystem: boolean
   groupEquipmentByType: boolean
   equipmentGroupingOrder: OperationalEquipmentGrouping[]
+  equipmentStatusSource: OperationalEquipmentStatusSource
   showEquipmentAttentionCount: boolean
   equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
 }
@@ -79,9 +82,7 @@ function EntityIncidents() {
             <tr className="h-14">
               <td className="px-4 font-medium">2151147</td>
               <td className="px-4">
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e5e5] px-2 py-1 text-[#f05a55]">
-                  <span>▮▮▮</span>High
-                </span>
+                <IncidentSeverityBadge severity="High" />
               </td>
               <td className="px-4">Connection instability</td>
               <td className="px-4">Aug 19, 15:37</td>
@@ -89,9 +90,7 @@ function EntityIncidents() {
             <tr className="h-14">
               <td className="px-4 font-medium">2151160</td>
               <td className="px-4">
-                <span className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e5e5] px-2 py-1 text-[#f4a51c]">
-                  <span>▮▮▮</span>Medium
-                </span>
+                <IncidentSeverityBadge severity="Medium" />
               </td>
               <td className="px-4">Temperature warning</td>
               <td className="px-4">Aug 19, 15:35</td>
@@ -453,6 +452,7 @@ export default function EquipmentDetailPage({
   groupEquipmentBySystem,
   groupEquipmentByType,
   equipmentGroupingOrder,
+  equipmentStatusSource,
   showEquipmentAttentionCount,
   equipmentAttentionIndicator,
 }: EquipmentDetailPageProps) {
@@ -780,6 +780,7 @@ export default function EquipmentDetailPage({
               groupBySystem={groupEquipmentBySystem}
               groupByType={groupEquipmentByType}
               groupingOrder={equipmentGroupingOrder}
+              statusSource={equipmentStatusSource}
             />
           </div>
         )}

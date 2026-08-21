@@ -14,12 +14,14 @@ import type {
   OperationalEquipmentHealthFilter,
   OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
+  OperationalEquipmentStatusSource,
 } from "@/OperationalEquipmentList"
 import { equipmentAttentionCount } from "@/OperationalEquipmentList"
 import EquipmentAttentionIndicator, {
   type EquipmentAttentionIndicatorMode,
 } from "@/EquipmentAttentionIndicator"
 import type { EquipmentDetailTarget } from "@/EquipmentPage"
+import SitePageHeader from "@/SitePageHeader"
 
 type LiveEntity = { kind: "unit" unit: IntegratedUnit position: number } | {
   kind: "system"
@@ -923,6 +925,7 @@ export default function SiteOverviewPage({
   groupEquipmentBySystem,
   groupEquipmentByType,
   equipmentGroupingOrder,
+  equipmentStatusSource,
   showEquipmentAttentionCount,
   equipmentAttentionIndicator,
   onOpenEquipmentDetail,
@@ -943,6 +946,7 @@ export default function SiteOverviewPage({
   groupEquipmentBySystem: boolean
   groupEquipmentByType: boolean
   equipmentGroupingOrder: OperationalEquipmentGrouping[]
+  equipmentStatusSource: OperationalEquipmentStatusSource
   showEquipmentAttentionCount: boolean
   equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
   onOpenEquipmentDetail: (target: EquipmentDetailTarget) => void
@@ -1013,7 +1017,31 @@ export default function SiteOverviewPage({
         </div>
       </header>
       <main className="mx-auto w-full max-w-[1440px] px-6 pb-12 pt-6">
-        <div className="mb-7 flex items-center gap-2">
+        <SitePageHeader
+          site={site}
+          partner={partner}
+          position={siteIndex + 1}
+          total={sites.length}
+          activeTab="overview"
+          attentionCount={attentionCount}
+          showEquipmentAttentionCount={showEquipmentAttentionCount}
+          equipmentAttentionIndicator={equipmentAttentionIndicator}
+          onOpenSites={onOpenSites}
+          onOpenEquipment={onOpenEquipment}
+          onPrevious={onPreviousSite}
+          onNext={onNextSite}
+          onTabChange={(tab) => {
+            if (tab === "equipment") onOpenEquipmentTab()
+            if (tab === "incidents") {
+              onOpenEquipmentTab()
+              window.setTimeout(
+                () => window.dispatchEvent(new Event("prototype:open-site-incidents")),
+                0,
+              )
+            }
+          }}
+        />
+        <div className="hidden">
           <IconButton label="Back" onClick={onOpenSites}>
             ←
           </IconButton>
@@ -1027,7 +1055,7 @@ export default function SiteOverviewPage({
             {siteIndex + 1} of {sites.length} sites
           </span>
         </div>
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="hidden">
           <div className="flex items-center gap-3">
             <span className="grid size-14 place-items-center rounded-full border border-[#e6e6e6] bg-[#fafafa]">
               <SiteGlyph />
@@ -1055,7 +1083,7 @@ export default function SiteOverviewPage({
             Actions <Chevron />
           </button>
         </div>
-        <nav className="flex h-11 items-end gap-1 border-b border-[#e6e6e6]">
+        <nav className="hidden">
           {["Overview", "Charges", "Incidents"].map((label) => (
             <button
               key={label}
@@ -1123,7 +1151,8 @@ export default function SiteOverviewPage({
                   view={equipmentPresentation}
                   groupBySystem={groupEquipmentBySystem}
                   groupByType={groupEquipmentByType}
-                  groupingOrder={equipmentGroupingOrder}
+              groupingOrder={equipmentGroupingOrder}
+              statusSource={equipmentStatusSource}
                   hideNormalWhenGrouped
                 />
               </section>

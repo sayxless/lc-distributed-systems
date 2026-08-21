@@ -135,7 +135,14 @@ const acmeSites: Site[] = [
       { id: "UN-432", chargerCount: 4 },
       { id: "UN-433", chargerCount: 2 },
     ]),
-    distributedSystems: [],
+    distributedSystems: [
+      createDistributedSystem({
+        id: "DS-401",
+        chargerCount: 8,
+        gensetCount: 3,
+        bessCount: 2,
+      }),
+    ],
   },
   {
     id: "tower-mission-5",
@@ -147,7 +154,14 @@ const acmeSites: Site[] = [
       { id: "UN-441", chargerCount: 2 },
       { id: "UN-442", chargerCount: 2 },
     ]),
-    distributedSystems: [],
+    distributedSystems: [
+      createDistributedSystem({
+        id: "DS-501",
+        chargerCount: 8,
+        gensetCount: 3,
+        bessCount: 2,
+      }),
+    ],
   },
 ]
 

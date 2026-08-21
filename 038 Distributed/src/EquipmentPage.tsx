@@ -104,9 +104,7 @@ function rowsForSection(section: EquipmentSectionId): TableRow[] {
       ),
     )
   } else if (section === "distributed") {
-    partners
-      .filter((partner) => partner.id !== "acme")
-      .forEach((partner) =>
+    partners.forEach((partner) =>
         partner.sites.forEach((site) =>
           site.distributedSystems.forEach((system) =>
             records.push({
@@ -143,9 +141,7 @@ function rowsForSection(section: EquipmentSectionId): TableRow[] {
         }),
       )
     }
-    partners
-      .filter((partner) => partner.id !== "acme")
-      .forEach((partner) =>
+    partners.forEach((partner) =>
         partner.sites.forEach((site) =>
           site.distributedSystems.forEach((system) => {
             const assets: EquipmentAsset[] =

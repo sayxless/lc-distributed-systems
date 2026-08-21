@@ -19,12 +19,14 @@ type OperationalEquipmentListProps = {
   groupByType?: boolean
   groupingOrder?: OperationalEquipmentGrouping[]
   hideNormalWhenGrouped?: boolean
+  statusSource?: OperationalEquipmentStatusSource
 }
 
 export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer" | "fullTable"
 export type OperationalEquipmentHealthFilter = "critical" | "warning" | "normal" | "all"
 export type OperationalEquipmentPresentation = "segment" | "grouped"
 export type OperationalEquipmentGrouping = "system" | "type"
+export type OperationalEquipmentStatusSource = "health" | "status"
 
 type Health = Exclude<OperationalEquipmentHealthFilter, "all"> | "offline"
 type OperationalRow = EquipmentDetailTarget & {
@@ -89,7 +91,40 @@ function sortByHealth(rows: OperationalRow[]) {
   )
 }
 
-function sortOperationalRows(rows: OperationalRow[], sort: EquipmentSort) {
+function equipmentStatusMeta(row: OperationalRow) {
+  if (row.health === "critical") {
+    if (row.section === "chargers") {
+      return { label: "Faulted", icon: "faulted" as const }
+    }
+
+    return { label: "Not ready", indicatorClassName: "bg-[#d5302a]" }
+  }
+
+  if (row.health === "warning") {
+    return { label: "Attention", indicatorClassName: "bg-[#f4a51c]" }
+  }
+
+  return {
+    label: {
+      available: "Available",
+      running: "Running",
+      charging: "Charging",
+      discharging: "Discharging",
+      operational: "Operational",
+    }[row.status],
+    indicatorClassName: "bg-[#1dcc6e]",
+  }
+}
+
+function equipmentStatusLabel(row: OperationalRow) {
+  return equipmentStatusMeta(row).label
+}
+
+function sortOperationalRows(
+  rows: OperationalRow[],
+  sort: EquipmentSort,
+  statusSource: OperationalEquipmentStatusSource,
+) {
   if (!sort) return rows
 
   const direction = sort.direction === "ascending" ? 1 : -1
@@ -99,7 +134,9 @@ function sortOperationalRows(rows: OperationalRow[], sort: EquipmentSort) {
       type: typeLabel(left.section).localeCompare(typeLabel(right.section)),
       system: (left.system ?? "").localeCompare(right.system ?? ""),
       health:
-        healthMeta(left.health).priority - healthMeta(right.health).priority,
+        statusSource === "health"
+          ? healthMeta(left.health).priority - healthMeta(right.health).priority
+          : equipmentStatusLabel(left).localeCompare(equipmentStatusLabel(right)),
       incidents: left.incidents - right.incidents,
       connection:
         (left.connection === "offline" ? 0 : 1) -
@@ -180,6 +217,23 @@ function HealthBadge({ health }: { health: Health }) {
   )
 }
 
+function EquipmentStatusBadge({ row }: { row: OperationalRow }) {
+  const meta = equipmentStatusMeta(row)
+  return (
+    <span className="inline-flex h-6 items-center gap-2 whitespace-nowrap rounded-md border border-[#e5e5e5] bg-white px-2 text-[13px] leading-5 text-[#242424]">
+      {meta.icon ? (
+        <StatusIcon name={meta.icon} className="size-4" />
+      ) : (
+        <i
+          aria-hidden="true"
+          className={`size-2 rounded-full ${meta.indicatorClassName}`}
+        />
+      )}
+      {meta.label}
+    </span>
+  )
+}
+
 function Chevron({ open }: { open: boolean }) {
   return (
     <svg
@@ -226,6 +280,7 @@ function OperationalTable({
   onOpenDetail,
   showSystem,
   showType,
+  statusSource = "health",
   sort = null,
   onSort = () => {},
   frameClassName = "rounded-xl border border-[#e6e6e6] bg-white",
@@ -234,6 +289,7 @@ function OperationalTable({
   onOpenDetail: (target: EquipmentDetailTarget) => void
   showSystem: boolean
   showType: boolean
+  statusSource?: OperationalEquipmentStatusSource
   sort?: EquipmentSort
   onSort?: (column: SortColumn) => void
   frameClassName?: string
@@ -267,7 +323,7 @@ function OperationalTable({
             )}
             <SortableColumnHeader
               column="health"
-              label="Health"
+              label={statusSource === "health" ? "Health" : "Status"}
               sort={sort}
               onSort={onSort}
             />
@@ -334,7 +390,11 @@ function OperationalTable({
                 </td>
               )}
               <td className="px-4">
-                <HealthBadge health={row.health} />
+                {statusSource === "health" ? (
+                  <HealthBadge health={row.health} />
+                ) : (
+                  <EquipmentStatusBadge row={row} />
+                )}
               </td>
               <td className="px-4">
                 <IncidentValue row={row} />
@@ -469,6 +529,7 @@ function GroupedEquipmentTables({
   onOpenDetail,
   sort,
   onSort,
+  statusSource,
 }: {
   rows: OperationalRow[]
   groupingOrder: OperationalEquipmentGrouping[]
@@ -476,6 +537,7 @@ function GroupedEquipmentTables({
   onOpenDetail: (target: EquipmentDetailTarget) => void
   sort: EquipmentSort
   onSort: (column: SortColumn) => void
+  statusSource: OperationalEquipmentStatusSource
 }) {
   const [grouping, ...nestedGrouping] = groupingOrder
   const hiddenColumns = new Set(hiddenGroupings)
@@ -483,12 +545,13 @@ function GroupedEquipmentTables({
   if (!grouping) {
     return (
       <OperationalTable
-        rows={sortOperationalRows(rows, sort)}
+        rows={sortOperationalRows(rows, sort, statusSource)}
         showSystem
         showType
         onOpenDetail={onOpenDetail}
         sort={sort}
         onSort={onSort}
+        statusSource={statusSource}
       />
     )
   }
@@ -518,15 +581,17 @@ function GroupedEquipmentTables({
               onOpenDetail={onOpenDetail}
               sort={sort}
               onSort={onSort}
+              statusSource={statusSource}
             />
           ) : (
             <OperationalTable
-              rows={sortOperationalRows(group, sort)}
+              rows={sortOperationalRows(group, sort, statusSource)}
               showSystem={!hiddenColumns.has("system")}
               showType={!hiddenColumns.has("type")}
               onOpenDetail={onOpenDetail}
               sort={sort}
               onSort={onSort}
+              statusSource={statusSource}
               frameClassName="border-0 bg-white"
             />
           )}
@@ -1547,6 +1612,7 @@ export default function OperationalEquipmentList({
   groupByType = false,
   groupingOrder = ["system", "type"],
   hideNormalWhenGrouped = false,
+  statusSource = "health",
 }: OperationalEquipmentListProps) {
   const [sort, setSort] = useState<EquipmentSort>(null)
   const rows = useMemo(() => {
@@ -1654,15 +1720,17 @@ export default function OperationalEquipmentList({
               onOpenDetail={onOpenDetail}
               sort={sort}
               onSort={toggleSort}
+              statusSource={statusSource}
             />
           ) : (
             <OperationalTable
-              rows={sortOperationalRows(visibleRows, sort)}
+              rows={sortOperationalRows(visibleRows, sort, statusSource)}
               showSystem={showSystem}
               showType
               onOpenDetail={onOpenDetail}
               sort={sort}
               onSort={toggleSort}
+              statusSource={statusSource}
             />
           )}
         </>
@@ -1684,12 +1752,13 @@ export default function OperationalEquipmentList({
                 </div>
                 <div className="mt-3">
                   <OperationalTable
-                    rows={sortOperationalRows(group.rows, sort)}
+                    rows={sortOperationalRows(group.rows, sort, statusSource)}
                     showSystem={showSystem}
                     showType
                     onOpenDetail={onOpenDetail}
                     sort={sort}
                     onSort={toggleSort}
+                    statusSource={statusSource}
                   />
                 </div>
               </section>

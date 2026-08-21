@@ -5,14 +5,17 @@ import type {
   OperationalEquipmentHealthFilter,
   OperationalEquipmentGrouping,
   OperationalEquipmentPresentation,
+  OperationalEquipmentStatusSource,
 } from "@/OperationalEquipmentList"
 import { equipmentAttentionCount } from "@/OperationalEquipmentList"
 import EquipmentAttentionIndicator, {
   type EquipmentAttentionIndicatorMode,
 } from "@/EquipmentAttentionIndicator"
+import IncidentSeverityBadge from "@/IncidentSeverityBadge"
 import StatusIcon from "@/StatusIcon"
 import { getPartner, getSite, sites } from "@/prototypeData"
 import type { EquipmentDetailTarget } from "@/EquipmentPage"
+import SitePageHeader from "@/SitePageHeader"
 
 type SiteOperationalEquipmentPageProps = {
   siteId: string
@@ -29,6 +32,7 @@ type SiteOperationalEquipmentPageProps = {
   groupEquipmentBySystem: boolean
   groupEquipmentByType: boolean
   equipmentGroupingOrder: OperationalEquipmentGrouping[]
+  equipmentStatusSource: OperationalEquipmentStatusSource
   showEquipmentAttentionCount: boolean
   equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
 }
@@ -107,23 +111,9 @@ function SiteIncidents() {
               <tr key={id} className="h-14">
                 <td className="px-4 font-medium">{id}</td>
                 <td className="px-4">
-                  <span className="inline-flex items-center gap-1.5 rounded-md border border-[#e5e5e5] px-2 py-1">
-                    <span
-                      aria-hidden="true"
-                      className={
-                        severity === "Stopper"
-                          ? "text-[#d5302a]"
-                          : severity === "Medium"
-                            ? "text-[#f4a51c]"
-                            : severity === "Low"
-                              ? "text-[#8a8a8a]"
-                              : "text-[#f05a55]"
-                      }
-                    >
-                      {severity === "Stopper" ? "!" : "▮▮▮"}
-                    </span>
-                    {severity}
-                  </span>
+                  <IncidentSeverityBadge
+                    severity={severity as "High" | "Medium" | "Low" | "Stopper"}
+                  />
                 </td>
                 <td className="px-4">{incident}</td>
                 <td className="px-4 text-[#525252]">{period}</td>
@@ -149,6 +139,7 @@ export default function SiteOperationalEquipmentPage({
   groupEquipmentBySystem,
   groupEquipmentByType,
   equipmentGroupingOrder,
+  equipmentStatusSource,
   showEquipmentAttentionCount,
   equipmentAttentionIndicator,
 }: SiteOperationalEquipmentPageProps) {
@@ -211,8 +202,26 @@ export default function SiteOperationalEquipmentPage({
           </div>
         </div>
       </header>
-      <main className="mx-auto w-full max-w-[1440px] px-6 py-7 lg:px-8">
-        <div className="mb-7 flex items-center gap-2 text-sm text-[#757575]">
+      <main className="mx-auto w-full max-w-[1440px] px-6 pb-12 pt-6">
+        <SitePageHeader
+          site={site}
+          partner={partner}
+          position={index + 1}
+          total={sites.length}
+          activeTab={activeTab}
+          attentionCount={attentionCount}
+          showEquipmentAttentionCount={showEquipmentAttentionCount}
+          equipmentAttentionIndicator={equipmentAttentionIndicator}
+          onOpenSites={onOpenSites}
+          onPrevious={onPreviousSite}
+          onNext={onNextSite}
+          onTabChange={(tab) => {
+            if (tab === "overview") onOpenOverview()
+            if (tab === "incidents") setActiveTab("incidents")
+            if (tab === "equipment") setActiveTab("equipment")
+          }}
+        />
+        <div className="hidden">
           <IconButton label="Back to sites" onClick={onOpenSites}>
             <Arrow direction="back" />
           </IconButton>
@@ -226,7 +235,7 @@ export default function SiteOperationalEquipmentPage({
             {index + 1} of {sites.length} sites
           </span>
         </div>
-        <header className="mb-5 flex flex-wrap items-start justify-between gap-4">
+        <header className="hidden">
           <div className="flex items-center gap-3">
             <span className="grid size-14 place-items-center rounded-full border border-[#e6e6e6] bg-[#fafafa]">
               <StatusIcon name="site" className="size-6" />
@@ -252,10 +261,7 @@ export default function SiteOperationalEquipmentPage({
             Actions⌄
           </button>
         </header>
-        <nav
-          className="flex items-center gap-6 border-b border-[#e6e6e6] text-sm"
-          aria-label="Site tabs"
-        >
+        <nav className="hidden">
           <button
             type="button"
             onClick={onOpenOverview}
@@ -307,6 +313,7 @@ export default function SiteOperationalEquipmentPage({
               groupBySystem={groupEquipmentBySystem}
               groupByType={groupEquipmentByType}
               groupingOrder={equipmentGroupingOrder}
+              statusSource={equipmentStatusSource}
             />
           </div>
         )}
