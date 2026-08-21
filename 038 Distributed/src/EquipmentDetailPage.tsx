@@ -35,6 +35,7 @@ type EquipmentDetailPageProps = {
   groupEquipmentByType: boolean
   equipmentGroupingOrder: OperationalEquipmentGrouping[]
   equipmentStatusSource: OperationalEquipmentStatusSource
+  fullEquipmentDetails: boolean
   showEquipmentAttentionCount: boolean
   equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
 }
@@ -453,6 +454,7 @@ export default function EquipmentDetailPage({
   groupEquipmentByType,
   equipmentGroupingOrder,
   equipmentStatusSource,
+  fullEquipmentDetails,
   showEquipmentAttentionCount,
   equipmentAttentionIndicator,
 }: EquipmentDetailPageProps) {
@@ -781,6 +783,7 @@ export default function EquipmentDetailPage({
               groupByType={groupEquipmentByType}
               groupingOrder={equipmentGroupingOrder}
               statusSource={equipmentStatusSource}
+              fullEquipmentDetails={fullEquipmentDetails}
             />
           </div>
         )}

@@ -33,6 +33,7 @@ type SiteOperationalEquipmentPageProps = {
   groupEquipmentByType: boolean
   equipmentGroupingOrder: OperationalEquipmentGrouping[]
   equipmentStatusSource: OperationalEquipmentStatusSource
+  fullEquipmentDetails: boolean
   showEquipmentAttentionCount: boolean
   equipmentAttentionIndicator: EquipmentAttentionIndicatorMode
 }
@@ -140,6 +141,7 @@ export default function SiteOperationalEquipmentPage({
   groupEquipmentByType,
   equipmentGroupingOrder,
   equipmentStatusSource,
+  fullEquipmentDetails,
   showEquipmentAttentionCount,
   equipmentAttentionIndicator,
 }: SiteOperationalEquipmentPageProps) {
@@ -314,6 +316,7 @@ export default function SiteOperationalEquipmentPage({
               groupByType={groupEquipmentByType}
               groupingOrder={equipmentGroupingOrder}
               statusSource={equipmentStatusSource}
+              fullEquipmentDetails={fullEquipmentDetails}
             />
           </div>
         )}

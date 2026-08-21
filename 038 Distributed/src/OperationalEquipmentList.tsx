@@ -20,6 +20,7 @@ type OperationalEquipmentListProps = {
   groupingOrder?: OperationalEquipmentGrouping[]
   hideNormalWhenGrouped?: boolean
   statusSource?: OperationalEquipmentStatusSource
+  fullEquipmentDetails?: boolean
 }
 
 export type OperationalEquipmentView = "table" | "groups" | "cards" | "explorer" | "fullTable"
@@ -1112,6 +1113,30 @@ function FullTable({
   )
 }
 
+function FullDetailsBySystem({
+  rows,
+  onOpenDetail,
+}: {
+  rows: OperationalRow[]
+  onOpenDetail: (target: EquipmentDetailTarget) => void
+}) {
+  return (
+    <div className="space-y-5">
+      {groupRows(rows, "system").map(([system, systemRows]) => (
+        <section key={system} className="space-y-3">
+          <EquipmentGroupingHeader
+            grouping="system"
+            value={system}
+            rows={systemRows}
+            isLeafGroup={false}
+          />
+          <FullTable rows={systemRows} onOpenDetail={onOpenDetail} />
+        </section>
+      ))}
+    </div>
+  )
+}
+
 function CardTone({ health }: { health: Health }) {
   return health === "offline" || health === "critical"
     ? "border-[#efcecb] bg-[#fff4f3]"
@@ -1613,6 +1638,7 @@ export default function OperationalEquipmentList({
   groupingOrder = ["system", "type"],
   hideNormalWhenGrouped = false,
   statusSource = "health",
+  fullEquipmentDetails = false,
 }: OperationalEquipmentListProps) {
   const [sort, setSort] = useState<EquipmentSort>(null)
   const rows = useMemo(() => {
@@ -1674,7 +1700,7 @@ export default function OperationalEquipmentList({
   }, [activeFilter, healthFilter, onHealthFilterChange])
   return (
     <section className="w-full">
-      {view === "segment" ? (
+      {view === "segment" || fullEquipmentDetails ? (
         <>
           <div
             role="group"
@@ -1713,7 +1739,16 @@ export default function OperationalEquipmentList({
               </button>
             ))}
           </div>
-          {activeGroupingOrder.length ? (
+          {fullEquipmentDetails ? (
+            groupBySystem ? (
+              <FullDetailsBySystem
+                rows={visibleRows}
+                onOpenDetail={onOpenDetail}
+              />
+            ) : (
+              <FullTable rows={visibleRows} onOpenDetail={onOpenDetail} />
+            )
+          ) : activeGroupingOrder.length ? (
             <GroupedEquipmentTables
               rows={visibleRows}
               groupingOrder={activeGroupingOrder}
